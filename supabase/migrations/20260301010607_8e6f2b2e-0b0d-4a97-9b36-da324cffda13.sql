@@ -1,0 +1,1 @@
+DELETE FROM credit_payments WHERE id = 'c6f846bc-66c9-4538-a4ab-d21c78bb1331'

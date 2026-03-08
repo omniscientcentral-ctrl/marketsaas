@@ -1,0 +1,2 @@
+-- Add cash_register_session_id to sales table to link sales with their cash register session
+ALTER TABLE public.sales ADD COLUMN cash_register_session_id uuid REFERENCES public.cash_register_sessions(id);

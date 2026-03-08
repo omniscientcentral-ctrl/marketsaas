@@ -1,0 +1,1 @@
+ALTER TABLE public.sales ADD COLUMN replaces_sale_id uuid;

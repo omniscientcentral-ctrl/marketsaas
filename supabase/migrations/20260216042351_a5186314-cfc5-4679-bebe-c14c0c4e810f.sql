@@ -1,0 +1,1 @@
+ALTER TABLE product_batches ADD COLUMN location text;

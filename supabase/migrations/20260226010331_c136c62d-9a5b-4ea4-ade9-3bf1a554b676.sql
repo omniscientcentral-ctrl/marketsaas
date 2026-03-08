@@ -1,0 +1,1 @@
+ALTER TABLE public.pending_sales ADD COLUMN customer_id uuid;
