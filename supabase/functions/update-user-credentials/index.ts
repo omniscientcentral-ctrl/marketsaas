@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
     }
 
     // Validar contraseña si se proporciona
-    if (body.newPassword && body.newPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters')
+    if (body.newPassword && body.newPassword.length < 5) {
+      throw new Error('Password must be at least 5 characters')
     }
 
     // Cliente service role ya creado arriba: supabaseService
