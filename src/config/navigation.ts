@@ -71,6 +71,10 @@ export const navigationItems: NavigationItem[] = [
 
 export const getNavigationForRoles = (userRoles: string[]): NavigationItem[] => {
   const normalizedRoles = userRoles.filter(Boolean).map((r) => r.toLowerCase());
+  // super_admin has access to everything
+  if (normalizedRoles.includes('super_admin')) {
+    return navigationItems;
+  }
   return navigationItems.filter((item) =>
     item.roles.some((role) => normalizedRoles.includes(role.toLowerCase()))
   );
@@ -79,6 +83,7 @@ export const getNavigationForRoles = (userRoles: string[]): NavigationItem[] => 
 export const getHomePathForRole = (role: string | null): string => {
   if (!role) return "/pos";
   const roleHome: Record<string, string> = {
+    super_admin: "/dashboard",
     admin: "/dashboard",
     supervisor: "/pos",
     cajero: "/pos",
