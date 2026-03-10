@@ -87,10 +87,15 @@ const Dashboard = () => {
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Panel de control</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
-              Métricas y análisis en tiempo real
+              {isSuperAdmin && selectedEmpresa
+                ? `Empresa: ${selectedEmpresa.nombre_empresa}`
+                : "Métricas y análisis en tiempo real"}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <EmpresaSelector />
+            </div>
             <NotificationBell />
             <ThemeToggle />
           </div>
