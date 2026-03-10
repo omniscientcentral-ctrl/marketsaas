@@ -6,6 +6,7 @@ import {
   Receipt,
   Wallet,
   Settings,
+  Building2,
   LucideIcon,
 } from "lucide-react";
 
