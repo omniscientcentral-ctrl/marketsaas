@@ -62,7 +62,22 @@ export const useAuth = () => {
         return;
       }
 
+      // Obtener todos los roles del usuario
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
       if (!profile) {
+        // Si no hay perfil pero tiene rol super_admin, permitir acceso
+        const roles = rolesData?.map((r: any) => r.role).filter(Boolean) || [];
+        if (roles.includes('super_admin')) {
+          setUserRoles(roles);
+          setUserRole('super_admin');
+          setActiveRole('super_admin');
+          setIsActive(true);
+          return;
+        }
         console.warn("No profile found for user:", userId);
         setUserRoles([]);
         setActiveRole(null);
@@ -77,12 +92,6 @@ export const useAuth = () => {
         await signOut();
         return;
       }
-
-      // Obtener todos los roles del usuario
-      const { data: rolesData, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
 
       if (rolesError) {
         console.error("Error fetching roles:", rolesError);
