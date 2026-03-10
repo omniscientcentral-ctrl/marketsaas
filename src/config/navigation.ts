@@ -6,6 +6,7 @@ import {
   Receipt,
   Wallet,
   Settings,
+  Building2,
   LucideIcon,
 } from "lucide-react";
 
@@ -66,6 +67,13 @@ export const navigationItems: NavigationItem[] = [
   path: "/settings",
   roles: ["supervisor", "admin"],
   mobileLabel: "Config",
+},
+{
+  icon: Building2,
+  label: "Empresas",
+  path: "/empresas",
+  roles: ["super_admin"],
+  mobileLabel: "Empresas",
 },
 ];
 
