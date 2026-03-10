@@ -41,7 +41,7 @@ const CashRegistersManagement = () => {
 
     // Esperar a que el rol esté cargado antes de verificar permisos
     if (!loading && user && activeRole) {
-      const allowedRoles = ['admin', 'supervisor'];
+      const allowedRoles = ['admin', 'supervisor', 'super_admin'];
       if (!allowedRoles.includes(activeRole.toLowerCase())) {
         toast.error("No tenés permisos para gestionar cajas");
         navigate("/pos");

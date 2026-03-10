@@ -50,7 +50,7 @@ const Users = () => {
   }, [userRole, authLoading, navigate]);
 
   useEffect(() => {
-    const allowedRoles = ['admin', 'supervisor'];
+    const allowedRoles = ['admin', 'supervisor', 'super_admin'];
     if (userRole && allowedRoles.includes(userRole)) {
       fetchUsers();
     }

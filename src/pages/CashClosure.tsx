@@ -50,7 +50,7 @@ export default function CashClosure() {
     if (!activeRole) return;
 
     // Guard: Solo admin, supervisor y cajero pueden acceder al cierre de caja
-    const allowedRoles = ['admin', 'supervisor', 'cajero'];
+    const allowedRoles = ['admin', 'supervisor', 'cajero', 'super_admin'];
     if (!allowedRoles.includes(activeRole)) {
       toast.error('No tenés permisos para el cierre de caja');
       navigate("/pos");

@@ -38,7 +38,7 @@ const ExpensesManagement = () => {
     );
   }
 
-  const allowedRolesCheck = ['admin', 'supervisor', 'cajero'];
+  const allowedRolesCheck = ['admin', 'supervisor', 'cajero', 'super_admin'];
   if (!user || !allowedRolesCheck.includes(activeRole.toLowerCase())) {
     return null;
   }
