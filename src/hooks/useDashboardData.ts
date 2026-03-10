@@ -71,18 +71,18 @@ export interface DebtorCustomer {
 export interface ReturnItem {
   id: string;
   type: string;
-  reason: string;
+  reason: string | null;
   productName: string;
   quantity: number;
   refundAmount: number;
-  createdAt: string;
+  createdAt: string | null;
 }
 
 export interface CriticalStockProduct {
   id: string;
   name: string;
   stock: number;
-  stockDisabled: boolean;
+  stockDisabled: boolean | null;
   salesLast7Days: number;
 }
 
@@ -108,7 +108,7 @@ export interface ExpirationSummary {
   noticeCount: number;
 }
 
-export const useDashboardData = (filters: DashboardFilters) => {
+export const useDashboardData = (filters: DashboardFilters, empresaId?: string | null) => {
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState<KPIData | null>(null);
   const [cashRegisters, setCashRegisters] = useState<CashRegisterStatus[]>([]);
@@ -122,6 +122,14 @@ export const useDashboardData = (filters: DashboardFilters) => {
   const [expiringProducts, setExpiringProducts] = useState<ExpiringProduct[]>([]);
   const [creditEvolution, setCreditEvolution] = useState<CreditEvolutionData[]>([]);
   const [expirationSummary, setExpirationSummary] = useState<ExpirationSummary | null>(null);
+
+  // Helper to add empresa filter to a query builder
+  const withEmpresa = useCallback(<T extends { eq: (col: string, val: string) => T }>(query: T): T => {
+    if (empresaId) {
+      return query.eq("empresa_id", empresaId);
+    }
+    return query;
+  }, [empresaId]);
 
   const dateRanges = useMemo(() => {
     const now = new Date();
@@ -161,42 +169,47 @@ export const useDashboardData = (filters: DashboardFilters) => {
 
   const loadKPIs = useCallback(async () => {
     try {
-      // Sales today
-      const { data: todaySales } = await supabase
-        .from("sales")
-        .select("total, payment_method, cash_amount, card_amount, credit_amount")
-        .gte("created_at", dateRanges.today)
-        .lte("created_at", dateRanges.endToday)
-        .eq("status", "completed");
+      const { data: todaySales } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("total, payment_method, cash_amount, card_amount, credit_amount")
+          .gte("created_at", dateRanges.today)
+          .lte("created_at", dateRanges.endToday)
+          .eq("status", "completed")
+      );
 
-      // Sales this week
-      const { data: weekSales } = await supabase
-        .from("sales")
-        .select("total")
-        .gte("created_at", dateRanges.weekStart)
-        .lte("created_at", dateRanges.endToday)
-        .eq("status", "completed");
+      const { data: weekSales } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("total")
+          .gte("created_at", dateRanges.weekStart)
+          .lte("created_at", dateRanges.endToday)
+          .eq("status", "completed")
+      );
 
-      // Sales this month
-      const { data: monthSales } = await supabase
-        .from("sales")
-        .select("total")
-        .gte("created_at", dateRanges.monthStart)
-        .lte("created_at", dateRanges.endToday)
-        .eq("status", "completed");
+      const { data: monthSales } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("total")
+          .gte("created_at", dateRanges.monthStart)
+          .lte("created_at", dateRanges.endToday)
+          .eq("status", "completed")
+      );
 
-      // Total debt from customers
-      const { data: debtData } = await supabase
-        .from("customers")
-        .select("current_balance")
-        .gt("current_balance", 0);
+      const { data: debtData } = await withEmpresa(
+        supabase
+          .from("customers")
+          .select("current_balance")
+          .gt("current_balance", 0)
+      );
 
-      // Credit payments received in period
-      const { data: paymentsData } = await supabase
-        .from("credit_payments")
-        .select("amount")
-        .gte("created_at", dateRanges.start)
-        .lte("created_at", dateRanges.end);
+      const { data: paymentsData } = await withEmpresa(
+        supabase
+          .from("credit_payments")
+          .select("amount")
+          .gte("created_at", dateRanges.start)
+          .lte("created_at", dateRanges.end)
+      );
 
       const salesToday = todaySales?.reduce((sum, s) => sum + Number(s.total), 0) || 0;
       const salesWeek = weekSales?.reduce((sum, s) => sum + Number(s.total), 0) || 0;
@@ -205,7 +218,6 @@ export const useDashboardData = (filters: DashboardFilters) => {
       const ticketsWeek = weekSales?.length || 0;
       const ticketsMonth = monthSales?.length || 0;
 
-      // Payment method totals from today's sales
       let cashPayments = 0;
       let cardPayments = 0;
       let creditPayments = 0;
@@ -233,42 +245,73 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading KPIs:", error);
     }
-  }, [dateRanges]);
+  }, [dateRanges, withEmpresa]);
 
   const loadCashRegisters = useCallback(async () => {
     try {
-      const { data } = await supabase.rpc("get_cash_registers_status");
-      
-      if (data) {
-        const registers: CashRegisterStatus[] = data.map((r: any) => ({
-          id: r.cash_register_id,
-          name: r.name,
-          location: r.location,
-          isOpen: !!r.open_session_id,
-          openByUser: r.open_by_user_name,
-          openedAt: r.opened_at,
-          lastDifference: null,
-        }));
-        setCashRegisters(registers);
+      // For empresa-filtered view, query directly instead of RPC
+      if (empresaId) {
+        const { data: registers } = await supabase
+          .from("cash_registers")
+          .select("id, name, location, is_active")
+          .eq("empresa_id", empresaId)
+          .eq("is_active", true);
+
+        const { data: sessions } = await supabase
+          .from("cash_register_sessions")
+          .select("cash_register_id, cashier_id, opened_at, status")
+          .eq("empresa_id", empresaId)
+          .eq("status", "open");
+
+        if (registers) {
+          const result: CashRegisterStatus[] = registers.map((r) => {
+            const session = sessions?.find((s) => s.cash_register_id === r.id);
+            return {
+              id: r.id,
+              name: r.name,
+              location: r.location,
+              isOpen: !!session,
+              openByUser: null,
+              openedAt: session?.opened_at || null,
+              lastDifference: null,
+            };
+          });
+          setCashRegisters(result);
+        }
+      } else {
+        const { data } = await supabase.rpc("get_cash_registers_status");
+        if (data) {
+          const registers: CashRegisterStatus[] = data.map((r: any) => ({
+            id: r.cash_register_id,
+            name: r.name,
+            location: r.location,
+            isOpen: !!r.open_session_id,
+            openByUser: r.open_by_user_name,
+            openedAt: r.opened_at,
+            lastDifference: null,
+          }));
+          setCashRegisters(registers);
+        }
       }
     } catch (error) {
       console.error("Error loading cash registers:", error);
     }
-  }, []);
+  }, [empresaId]);
 
   const loadDailySales = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("sales")
-        .select("created_at, total")
-        .gte("created_at", subDays(new Date(), 30).toISOString())
-        .eq("status", "completed")
-        .order("created_at", { ascending: true });
+      const { data } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("created_at, total")
+          .gte("created_at", subDays(new Date(), 30).toISOString())
+          .eq("status", "completed")
+          .order("created_at", { ascending: true })
+      );
 
       if (data) {
         const salesByDay = new Map<string, { total: number; tickets: number }>();
         
-        // Initialize all 30 days
         for (let i = 29; i >= 0; i--) {
           const date = format(subDays(new Date(), i), "yyyy-MM-dd");
           salesByDay.set(date, { total: 0, tickets: 0 });
@@ -294,21 +337,22 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading daily sales:", error);
     }
-  }, []);
+  }, [withEmpresa]);
 
   const loadHourlySales = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("sales")
-        .select("created_at, total")
-        .gte("created_at", dateRanges.start)
-        .lte("created_at", dateRanges.end)
-        .eq("status", "completed");
+      const { data } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("created_at, total")
+          .gte("created_at", dateRanges.start)
+          .lte("created_at", dateRanges.end)
+          .eq("status", "completed")
+      );
 
       if (data) {
         const salesByHour = new Map<number, { total: number; tickets: number }>();
         
-        // Initialize all hours
         for (let i = 0; i < 24; i++) {
           salesByHour.set(i, { total: 0, tickets: 0 });
         }
@@ -333,16 +377,18 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading hourly sales:", error);
     }
-  }, [dateRanges]);
+  }, [dateRanges, withEmpresa]);
 
   const loadPaymentMethods = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("sales")
-        .select("payment_method, total")
-        .gte("created_at", dateRanges.start)
-        .lte("created_at", dateRanges.end)
-        .eq("status", "completed");
+      const { data } = await withEmpresa(
+        supabase
+          .from("sales")
+          .select("payment_method, total")
+          .gte("created_at", dateRanges.start)
+          .lte("created_at", dateRanges.end)
+          .eq("status", "completed")
+      );
 
       if (data) {
         const methodMap = new Map<string, { total: number; count: number }>();
@@ -370,15 +416,17 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading payment methods:", error);
     }
-  }, [dateRanges]);
+  }, [dateRanges, withEmpresa]);
 
   const loadTopProducts = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("sale_items")
-        .select("product_name, quantity, subtotal")
-        .gte("created_at", dateRanges.start)
-        .lte("created_at", dateRanges.end);
+      const { data } = await withEmpresa(
+        supabase
+          .from("sale_items")
+          .select("product_name, quantity, subtotal")
+          .gte("created_at", dateRanges.start)
+          .lte("created_at", dateRanges.end)
+      );
 
       if (data) {
         const productMap = new Map<string, { revenue: number; quantity: number }>();
@@ -401,16 +449,18 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading top products:", error);
     }
-  }, [dateRanges]);
+  }, [dateRanges, withEmpresa]);
 
   const loadDebtors = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("customers")
-        .select("id, name, current_balance, credit_limit, phone")
-        .gt("current_balance", 0)
-        .order("current_balance", { ascending: false })
-        .limit(10);
+      const { data } = await withEmpresa(
+        supabase
+          .from("customers")
+          .select("id, name, current_balance, credit_limit, phone")
+          .gt("current_balance", 0)
+          .order("current_balance", { ascending: false })
+          .limit(10)
+      );
 
       if (data) {
         setDebtors(data.map((c) => ({
@@ -424,17 +474,19 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading debtors:", error);
     }
-  }, []);
+  }, [withEmpresa]);
 
   const loadReturns = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("returns")
-        .select("id, return_type, reason, product_name, quantity, refund_amount, created_at")
-        .gte("created_at", dateRanges.start)
-        .lte("created_at", dateRanges.end)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data } = await withEmpresa(
+        supabase
+          .from("returns")
+          .select("id, return_type, reason, product_name, quantity, refund_amount, created_at")
+          .gte("created_at", dateRanges.start)
+          .lte("created_at", dateRanges.end)
+          .order("created_at", { ascending: false })
+          .limit(20)
+      );
 
       if (data) {
         setReturns(data.map((r) => ({
@@ -450,22 +502,24 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading returns:", error);
     }
-  }, [dateRanges]);
+  }, [dateRanges, withEmpresa]);
 
   const loadCriticalStock = useCallback(async () => {
     try {
-      // Products with stock disabled and high rotation
-      const { data: products } = await supabase
-        .from("products")
-        .select("id, name, stock, stock_disabled")
-        .eq("active", true);
+      const { data: products } = await withEmpresa(
+        supabase
+          .from("products")
+          .select("id, name, stock, stock_disabled")
+          .eq("active", true)
+      );
 
-      // Get sales from last 7 days to calculate rotation
       const weekAgo = subDays(new Date(), 7).toISOString();
-      const { data: recentSales } = await supabase
-        .from("sale_items")
-        .select("product_id, quantity")
-        .gte("created_at", weekAgo);
+      const { data: recentSales } = await withEmpresa(
+        supabase
+          .from("sale_items")
+          .select("product_id, quantity")
+          .gte("created_at", weekAgo)
+      );
 
       if (products) {
         const salesByProduct = new Map<string, number>();
@@ -491,7 +545,7 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading critical stock:", error);
     }
-  }, []);
+  }, [withEmpresa]);
 
   const loadExpiringProducts = useCallback(async () => {
     try {
@@ -512,7 +566,6 @@ export const useDashboardData = (filters: DashboardFilters) => {
           daysUntilExpiration: p.days_until_expiry || 0,
         })));
 
-        // Calculate expiration summary
         let summary: ExpirationSummary = {
           expiredCount: 0,
           criticalCount: 0,
@@ -537,21 +590,22 @@ export const useDashboardData = (filters: DashboardFilters) => {
 
   const loadCreditEvolution = useCallback(async () => {
     try {
-      // Get credit creation (debt) by day
-      const { data: credits } = await supabase
-        .from("credits")
-        .select("created_at, total_amount")
-        .gte("created_at", subDays(new Date(), 30).toISOString());
+      const { data: credits } = await withEmpresa(
+        supabase
+          .from("credits")
+          .select("created_at, total_amount")
+          .gte("created_at", subDays(new Date(), 30).toISOString())
+      );
 
-      // Get payments by day
-      const { data: payments } = await supabase
-        .from("credit_payments")
-        .select("created_at, amount")
-        .gte("created_at", subDays(new Date(), 30).toISOString());
+      const { data: payments } = await withEmpresa(
+        supabase
+          .from("credit_payments")
+          .select("created_at, amount")
+          .gte("created_at", subDays(new Date(), 30).toISOString())
+      );
 
       const evolutionMap = new Map<string, { debt: number; payments: number }>();
 
-      // Initialize all 30 days
       for (let i = 29; i >= 0; i--) {
         const date = format(subDays(new Date(), i), "yyyy-MM-dd");
         evolutionMap.set(date, { debt: 0, payments: 0 });
@@ -579,7 +633,7 @@ export const useDashboardData = (filters: DashboardFilters) => {
     } catch (error) {
       console.error("Error loading credit evolution:", error);
     }
-  }, []);
+  }, [withEmpresa]);
 
   const loadAllData = useCallback(async () => {
     setLoading(true);

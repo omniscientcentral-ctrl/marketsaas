@@ -13,6 +13,8 @@ import { ActionableLists } from "@/components/dashboard/ActionableLists";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { ExpirationAlertBanner } from "@/components/dashboard/ExpirationAlertBanner";
 import { useDashboardData, type DashboardFilters as Filters } from "@/hooks/useDashboardData";
+import { EmpresaSelector } from "@/components/EmpresaSelector";
+import { useEmpresaContext } from "@/contexts/EmpresaContext";
 
 const Dashboard = () => {
   const { user, loading: authLoading, activeRole } = useAuth();
