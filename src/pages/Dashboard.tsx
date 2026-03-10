@@ -18,6 +18,7 @@ import { useEmpresaContext } from "@/contexts/EmpresaContext";
 
 const Dashboard = () => {
   const { user, loading: authLoading, activeRole } = useAuth();
+  const { selectedEmpresaId, selectedEmpresa, isSuperAdmin } = useEmpresaContext();
   const navigate = useNavigate();
   const actionableListsRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -39,7 +40,7 @@ const Dashboard = () => {
     expirationSummary,
     creditEvolution,
     refresh,
-  } = useDashboardData(filters);
+  } = useDashboardData(filters, selectedEmpresaId);
 
   const handleViewExpirationDetails = () => {
     actionableListsRef.current?.scrollIntoView({ behavior: "smooth" });
