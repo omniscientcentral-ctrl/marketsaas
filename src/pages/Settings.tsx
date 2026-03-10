@@ -37,7 +37,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (!loading && user && activeRole) {
-      const allowedRoles = ["admin", "supervisor"];
+      const allowedRoles = ["admin", "supervisor", "super_admin"];
       if (!allowedRoles.includes(activeRole.toLowerCase())) {
         navigate("/dashboard");
       }

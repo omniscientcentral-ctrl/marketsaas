@@ -188,8 +188,8 @@ const POS = () => {
       fetchPricePermission();
     }
 
-    // Guard: Solo admin, supervisor y cajero pueden acceder al POS
-    const allowedRoles = ["admin", "supervisor", "cajero"];
+    // Guard: Solo admin, supervisor, cajero y super_admin pueden acceder al POS
+    const allowedRoles = ["admin", "supervisor", "cajero", "super_admin"];
     if (!loading && activeRole && !allowedRoles.includes(activeRole)) {
       toast.error("No tenés permisos para acceder al POS");
       navigate("/dashboard");

@@ -51,7 +51,8 @@ const Dashboard = () => {
     }
     
     if (!authLoading && user && activeRole) {
-      if (activeRole.toLowerCase() !== "admin") {
+      const allowed = ["admin", "super_admin"];
+      if (!allowed.includes(activeRole.toLowerCase())) {
         toast.error("Solo el administrador puede acceder al Panel de control");
         navigate("/pos");
       }
