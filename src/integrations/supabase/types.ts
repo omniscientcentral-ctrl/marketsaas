@@ -541,6 +541,45 @@ export type Database = {
         }
         Relationships: []
       }
+      empresas: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          estado: string
+          fecha_creacion: string | null
+          id: string
+          nombre_empresa: string
+          plan: string | null
+          rubro: string | null
+          telefono: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          estado?: string
+          fecha_creacion?: string | null
+          id?: string
+          nombre_empresa?: string
+          plan?: string | null
+          rubro?: string | null
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          estado?: string
+          fecha_creacion?: string | null
+          id?: string
+          nombre_empresa?: string
+          plan?: string | null
+          rubro?: string | null
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -968,6 +1007,7 @@ export type Database = {
           created_at: string | null
           default_role: Database["public"]["Enums"]["app_role"] | null
           email: string | null
+          empresa_id: string | null
           full_name: string | null
           id: string
           is_active: boolean | null
@@ -981,6 +1021,7 @@ export type Database = {
           created_at?: string | null
           default_role?: Database["public"]["Enums"]["app_role"] | null
           email?: string | null
+          empresa_id?: string | null
           full_name?: string | null
           id: string
           is_active?: boolean | null
@@ -994,6 +1035,7 @@ export type Database = {
           created_at?: string | null
           default_role?: Database["public"]["Enums"]["app_role"] | null
           email?: string | null
+          empresa_id?: string | null
           full_name?: string | null
           id?: string
           is_active?: boolean | null
@@ -1002,7 +1044,15 @@ export type Database = {
           price_edit_unlocked_at?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       returns: {
         Row: {
