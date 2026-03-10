@@ -1,39 +1,33 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Gestión de Empresas para Super Admin
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Problema
+No existe una página ni un menú "Empresas" en el sistema. El `super_admin` no puede crear, ver ni suspender empresas.
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+### Cambios necesarios
 
-### Cambios en `src/pages/Customers.tsx`
+#### 1. Agregar "Empresas" a la navegación (`src/config/navigation.ts`)
+- Nuevo item con icono `Building2`, path `/empresas`, rol `super_admin`
+- Solo visible para `super_admin`
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+#### 2. Crear página `src/pages/Empresas.tsx`
+- Tabla con todas las empresas: nombre, rubro, plan, estado, email, teléfono, fecha creación
+- Botón "Nueva Empresa" que abre un diálogo de creación
+- Acción por fila: suspender/activar empresa (cambia `estado` entre `activa` y `suspendida`)
+- Protección de acceso: solo `super_admin`
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+#### 3. Crear componente `src/components/empresas/EmpresaDialog.tsx`
+- Formulario para crear empresa con campos: nombre_empresa, rubro, email, telefono, plan, subdominio
+- Usado tanto para crear como para editar
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+#### 4. Agregar ruta en `src/App.tsx`
+- `<Route path="/empresas" element={<Empresas />} />`
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+#### 5. RLS - Sin cambios necesarios
+Las políticas RLS ya existen:
+- `super_admin` tiene `ALL` access en `empresas`
+- Authenticated users tienen `SELECT` access
 
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
-
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+No se modifica ninguna tabla ni lógica existente. Solo se agrega la interfaz de gestión.
 
