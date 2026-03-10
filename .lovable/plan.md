@@ -1,23 +1,39 @@
 
 
-## Problem Diagnosis
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-1. **No profile exists** for user `093f5fa4-a3d1-4d57-9182-fd11e2553b00` (soporte@soporte.com)
-2. The `handle_new_user` trigger is **not attached** to `auth.users`, so profiles are never auto-created
-3. The `bootstrap-super-admin` function uses `UPDATE` on profiles, which silently does nothing when the row doesn't exist
-4. The `user_roles` entry for `super_admin` exists correctly
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-## Fix Plan
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-### 1. Database Migration
-- **Insert the missing profile** for the super_admin user with `empresa_id = NULL`, `default_role = 'super_admin'`, `full_name = 'Omniscient'`
-- **Recreate the `handle_new_user` trigger** on `auth.users` so future user creation auto-generates profiles
+### Cambios en `src/pages/Customers.tsx`
 
-### 2. Fix `bootstrap-super-admin` Edge Function
-- Change `profiles.update(...)` to `profiles.upsert(...)` so it works whether the profile exists or not
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-### 3. Fix `useAuth.tsx` Frontend Handling
-- When profile is not found but user has `super_admin` role in `user_roles`, still allow navigation (the current code aborts role loading entirely when no profile is found, leaving the user stuck)
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-No changes to existing users or business logic. The super_admin will see the dashboard after login and have access to all navigation items.
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 

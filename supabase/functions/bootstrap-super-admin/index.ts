@@ -53,14 +53,15 @@ Deno.serve(async (req) => {
 
     const userId = newUser.user.id
 
-    // Update profile - no empresa_id restriction for super_admin
-    await supabase.from('profiles').update({
+    // Upsert profile - no empresa_id restriction for super_admin
+    await supabase.from('profiles').upsert({
+      id: userId,
       full_name: 'Omniscient',
       email,
       is_active: true,
       default_role: 'super_admin',
       empresa_id: null,
-    }).eq('id', userId)
+    })
 
     // Assign super_admin role
     await supabase.from('user_roles').insert({
