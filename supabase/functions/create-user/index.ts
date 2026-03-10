@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
       throw new Error('Email, password and fullName are required')
     }
 
-    if (body.password.length < 6) {
-      throw new Error('Password must be at least 6 characters')
+    if (body.password.length < 5) {
+      throw new Error('Password must be at least 5 characters')
     }
 
     if (!body.roles || body.roles.length === 0) {

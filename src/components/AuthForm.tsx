@@ -126,7 +126,7 @@ export const AuthForm = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={5}
                   className="pr-10"
                 />
                 <button

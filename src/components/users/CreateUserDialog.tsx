@@ -47,8 +47,8 @@ export const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUs
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    if (password.length < 5) {
+      toast.error("La contraseña debe tener al menos 5 caracteres");
       return;
     }
 
