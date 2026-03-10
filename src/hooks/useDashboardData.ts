@@ -124,7 +124,7 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
   const [expirationSummary, setExpirationSummary] = useState<ExpirationSummary | null>(null);
 
   // Helper to add empresa filter to a query builder
-  const withEmpresa = useCallback(<T extends { eq: (col: string, val: string) => T }>(query: T): T => {
+  const withEmpresa = useCallback((query: any): any => {
     if (empresaId) {
       return query.eq("empresa_id", empresaId);
     }
