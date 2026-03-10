@@ -1875,6 +1875,7 @@ export type Database = {
           status: string
         }[]
       }
+      get_user_empresa_id: { Args: { _user_id: string }; Returns: string }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
