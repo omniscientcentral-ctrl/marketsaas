@@ -551,6 +551,7 @@ export type Database = {
           nombre_empresa: string
           plan: string | null
           rubro: string | null
+          subdominio: string | null
           telefono: string | null
           updated_at: string | null
         }
@@ -563,6 +564,7 @@ export type Database = {
           nombre_empresa?: string
           plan?: string | null
           rubro?: string | null
+          subdominio?: string | null
           telefono?: string | null
           updated_at?: string | null
         }
@@ -575,6 +577,7 @@ export type Database = {
           nombre_empresa?: string
           plan?: string | null
           rubro?: string | null
+          subdominio?: string | null
           telefono?: string | null
           updated_at?: string | null
         }
