@@ -23,7 +23,7 @@ const ExpensesManagement = () => {
     // Esperar a que activeRole esté definido antes de verificar permisos
     if (!activeRole) return;
     
-    const allowedRoles = ['admin', 'supervisor', 'cajero'];
+    const allowedRoles = ['admin', 'supervisor', 'cajero', 'super_admin'];
     if (!allowedRoles.includes(activeRole.toLowerCase())) {
       toast.error("No tenés permisos para acceder a esta página");
       navigate("/pos");
