@@ -42,7 +42,7 @@ const Users = () => {
   useEffect(() => {
     if (authLoading) return;          // esperar a que cargue auth
     if (userRole === null) return;    // esperar a que se carguen los roles
-    const allowedRoles = ['admin', 'supervisor'];
+    const allowedRoles = ['admin', 'supervisor', 'super_admin'];
     if (!allowedRoles.includes(userRole)) {
       toast.error("Acceso denegado");
       navigate("/pos");
