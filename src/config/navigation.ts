@@ -68,6 +68,13 @@ export const navigationItems: NavigationItem[] = [
   roles: ["supervisor", "admin"],
   mobileLabel: "Config",
 },
+{
+  icon: Building2,
+  label: "Empresas",
+  path: "/empresas",
+  roles: ["super_admin"],
+  mobileLabel: "Empresas",
+},
 ];
 
 export const getNavigationForRoles = (userRoles: string[]): NavigationItem[] => {

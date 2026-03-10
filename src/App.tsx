@@ -37,6 +37,7 @@ const App = () => (
           <Route path="/cash-closure" element={<CashClosure />} />
           <Route path="/cash-closure-history" element={<CashClosureHistory />} />
           <Route path="/admin/gastos" element={<ExpensesManagement />} />
+          <Route path="/empresas" element={<Empresas />} />
           {/* Redirects for old routes */}
           <Route path="/users" element={<Navigate to="/settings?tab=usuarios" replace />} />
           <Route path="/admin/cajas" element={<Navigate to="/settings?tab=cajas" replace />} />
