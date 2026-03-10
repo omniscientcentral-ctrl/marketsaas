@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       .select('role')
       .eq('user_id', requesterId)
 
-    const isAdmin = roles?.some((r: any) => r.role === 'admin')
+    const isAdmin = roles?.some((r: any) => r.role === 'admin' || r.role === 'super_admin')
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: 'Only admins can create users' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
