@@ -75,7 +75,7 @@ const Dashboard = () => {
   }
 
   // Prevent rendering for non-admin
-  if (activeRole.toLowerCase() !== "admin") {
+  if (!["admin", "super_admin"].includes(activeRole.toLowerCase())) {
     return null;
   }
 
