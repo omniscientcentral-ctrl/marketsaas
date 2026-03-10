@@ -13,9 +13,12 @@ import { ActionableLists } from "@/components/dashboard/ActionableLists";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { ExpirationAlertBanner } from "@/components/dashboard/ExpirationAlertBanner";
 import { useDashboardData, type DashboardFilters as Filters } from "@/hooks/useDashboardData";
+import { EmpresaSelector } from "@/components/EmpresaSelector";
+import { useEmpresaContext } from "@/contexts/EmpresaContext";
 
 const Dashboard = () => {
   const { user, loading: authLoading, activeRole } = useAuth();
+  const { selectedEmpresaId, selectedEmpresa, isSuperAdmin } = useEmpresaContext();
   const navigate = useNavigate();
   const actionableListsRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -37,7 +40,7 @@ const Dashboard = () => {
     expirationSummary,
     creditEvolution,
     refresh,
-  } = useDashboardData(filters);
+  } = useDashboardData(filters, selectedEmpresaId);
 
   const handleViewExpirationDetails = () => {
     actionableListsRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,10 +87,15 @@ const Dashboard = () => {
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Panel de control</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
-              Métricas y análisis en tiempo real
+              {isSuperAdmin && selectedEmpresa
+                ? `Empresa: ${selectedEmpresa.nombre_empresa}`
+                : "Métricas y análisis en tiempo real"}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <EmpresaSelector />
+            </div>
             <NotificationBell />
             <ThemeToggle />
           </div>
