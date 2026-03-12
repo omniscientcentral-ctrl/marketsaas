@@ -1,72 +1,39 @@
 
 
-## Plan: Asignar Administrador a Empresa Existente
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Objetivo
-Permitir al `super_admin` asignar un usuario administrador a cualquier empresa, ya sea al crearla o después desde la tabla de empresas.
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-### Cambios
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-#### 1. Ampliar `EmpresaDialog` con sección de admin (solo al crear)
-Agregar campos opcionales al formulario de creación:
-- Separador visual "Administrador de la empresa"
-- Nombre completo, Email, Contraseña (mínimo 6 chars), Teléfono (opcional)
-- Estos campos solo aparecen cuando `!initialData` (creación, no edición)
-- La interfaz `onSave` pasa los datos adicionales: `adminName`, `adminEmail`, `adminPassword`, `adminPhone`
+### Cambios en `src/pages/Customers.tsx`
 
-#### 2. Agregar botón "Asignar Admin" en la tabla de empresas
-- Nueva columna "Admin" en la tabla que muestra el nombre del admin actual (query join `profiles` por `empresa_id` + role `admin`)
-- Botón "Asignar Admin" en cada fila que abre un diálogo específico `AssignAdminDialog`
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-#### 3. Crear `AssignAdminDialog` (`src/components/empresas/AssignAdminDialog.tsx`)
-- Diálogo simple con campos: Nombre, Email, Contraseña, Teléfono
-- Recibe `empresaId` y `empresaNombre` como props
-- Al guardar, llama a `create-user` con el `empresaId`
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-#### 4. Actualizar `createMutation` en `Empresas.tsx`
-Flujo al crear empresa con admin:
-1. `INSERT empresas` → obtener `empresa.id`
-2. Si hay datos de admin, llamar `supabase.functions.invoke('create-user', { body: { email, password, fullName, empresaId, roles: ['admin'], defaultRole: 'admin' } })`
-3. Toast con credenciales generadas
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
-#### 5. Actualizar edge function `create-user`
-- Agregar campo opcional `empresaId?: string` a la interfaz `CreateUserRequest`
-- Después de crear el usuario y que el trigger genere el perfil, si `empresaId` existe: `UPDATE profiles SET empresa_id = empresaId WHERE id = newUser.id`
-- Esto sobreescribe el `empresa_id` por defecto asignado por el trigger `handle_new_user`
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
 
-### Detalle técnico
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
 
-**Flujo de creación combinada (empresa + admin):**
-```text
-1. INSERT empresas → empresa.id
-2. functions.invoke('create-user', {
-     email, password, fullName, phone,
-     empresaId: empresa.id,
-     roles: ['admin'], defaultRole: 'admin'
-   })
-3. Toast: "Empresa creada. Admin: email / password"
-```
-
-**Flujo de asignación posterior (empresa existente):**
-```text
-1. AssignAdminDialog recibe empresaId
-2. functions.invoke('create-user', { ...datos, empresaId, roles: ['admin'] })
-3. Toast: "Administrador asignado"
-```
-
-**Edge function cambio clave** (en `create-user/index.ts`):
-```text
-// Después de crear usuario y actualizar perfil:
-if (body.empresaId) {
-  await supabaseService.from('profiles')
-    .update({ empresa_id: body.empresaId })
-    .eq('id', newUser.user.id)
-}
-```
-
-### Archivos a modificar
-1. `src/components/empresas/EmpresaDialog.tsx` - Agregar campos de admin
-2. `src/components/empresas/AssignAdminDialog.tsx` - Nuevo componente
-3. `src/pages/Empresas.tsx` - Flujo de creación + botón asignar admin + query de admins
-4. `supabase/functions/create-user/index.ts` - Soporte para `empresaId`
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 

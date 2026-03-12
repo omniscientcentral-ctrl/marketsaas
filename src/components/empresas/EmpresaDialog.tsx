@@ -4,14 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
-interface EmpresaFormData {
+export interface EmpresaFormData {
   nombre_empresa: string;
   rubro: string;
   email: string;
   telefono: string;
   plan: string;
   subdominio: string;
+  adminName?: string;
+  adminEmail?: string;
+  adminPassword?: string;
+  adminPhone?: string;
 }
 
 interface EmpresaDialogProps {
@@ -30,13 +35,19 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
     telefono: "",
     plan: "basic",
     subdominio: "",
+    adminName: "",
+    adminEmail: "",
+    adminPassword: "",
+    adminPhone: "",
   });
+
+  const isCreating = !initialData;
 
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({ ...prev, ...initialData }));
     } else {
-      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: "basic", subdominio: "" });
+      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: "basic", subdominio: "", adminName: "", adminEmail: "", adminPassword: "", adminPhone: "" });
     }
   }, [initialData, open]);
 
@@ -45,9 +56,12 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
     onSave(form);
   };
 
+  const hasAdminData = !!(form.adminName && form.adminEmail && form.adminPassword);
+  const adminPasswordValid = !form.adminPassword || form.adminPassword.length >= 6;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? "Editar Empresa" : "Nueva Empresa"}</DialogTitle>
         </DialogHeader>
@@ -111,11 +125,61 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
               />
             </div>
           </div>
+
+          {isCreating && (
+            <>
+              <Separator />
+              <p className="text-sm font-semibold text-muted-foreground">Administrador de la empresa (opcional)</p>
+              <div className="space-y-2">
+                <Label htmlFor="adminName">Nombre completo</Label>
+                <Input
+                  id="adminName"
+                  value={form.adminName || ""}
+                  onChange={(e) => setForm({ ...form, adminName: e.target.value })}
+                  placeholder="Nombre del administrador"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="adminEmail">Email</Label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={form.adminEmail || ""}
+                    onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
+                    placeholder="admin@empresa.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminPassword">Contraseña</Label>
+                  <Input
+                    id="adminPassword"
+                    type="password"
+                    value={form.adminPassword || ""}
+                    onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  {form.adminPassword && !adminPasswordValid && (
+                    <p className="text-xs text-destructive">Mínimo 6 caracteres</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminPhone">Teléfono (opcional)</Label>
+                <Input
+                  id="adminPhone"
+                  value={form.adminPhone || ""}
+                  onChange={(e) => setForm({ ...form, adminPhone: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !form.nombre_empresa.trim()}>
+            <Button type="submit" disabled={loading || !form.nombre_empresa.trim() || (hasAdminData && !adminPasswordValid)}>
               {loading ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>

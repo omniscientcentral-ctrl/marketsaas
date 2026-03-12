@@ -2,18 +2,22 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, UserPlus } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EmpresaDialog from "@/components/empresas/EmpresaDialog";
+import type { EmpresaFormData } from "@/components/empresas/EmpresaDialog";
+import AssignAdminDialog from "@/components/empresas/AssignAdminDialog";
 import { format } from "date-fns";
 
 const Empresas = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignAdminOpen, setAssignAdminOpen] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<{ id: string; nombre: string } | null>(null);
 
   const { data: empresas = [], isLoading } = useQuery({
     queryKey: ["empresas"],
@@ -27,21 +31,85 @@ const Empresas = () => {
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { error } = await supabase.from("empresas").insert({
-        nombre_empresa: data.nombre_empresa,
-        rubro: data.rubro || null,
-        email: data.email || null,
-        telefono: data.telefono || null,
-        plan: data.plan || "basic",
-        subdominio: data.subdominio || null,
-      });
+  // Query admins per empresa
+  const { data: adminsByEmpresa = {} } = useQuery({
+    queryKey: ["empresas-admins"],
+    queryFn: async () => {
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, empresa_id");
       if (error) throw error;
+
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (rolesError) throw rolesError;
+
+      const adminUserIds = new Set(
+        roles?.filter((r: any) => r.role === "admin").map((r: any) => r.user_id) || []
+      );
+
+      const map: Record<string, { full_name: string; email: string }[]> = {};
+      for (const p of profiles || []) {
+        if (p.empresa_id && adminUserIds.has(p.id)) {
+          if (!map[p.empresa_id]) map[p.empresa_id] = [];
+          map[p.empresa_id].push({ full_name: p.full_name || "", email: p.email || "" });
+        }
+      }
+      return map;
     },
-    onSuccess: () => {
-      toast.success("Empresa creada");
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: EmpresaFormData) => {
+      // 1. Create empresa
+      const { data: empresa, error } = await supabase
+        .from("empresas")
+        .insert({
+          nombre_empresa: data.nombre_empresa,
+          rubro: data.rubro || null,
+          email: data.email || null,
+          telefono: data.telefono || null,
+          plan: data.plan || "basic",
+          subdominio: data.subdominio || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      // 2. If admin data provided, create admin user
+      if (data.adminName && data.adminEmail && data.adminPassword) {
+        const { data: result, error: fnError } = await supabase.functions.invoke("create-user", {
+          body: {
+            email: data.adminEmail,
+            password: data.adminPassword,
+            fullName: data.adminName,
+            phone: data.adminPhone || undefined,
+            roles: ["admin"],
+            defaultRole: "admin",
+            empresaId: empresa.id,
+          },
+        });
+
+        if (fnError) throw fnError;
+        if (result?.error) throw new Error(result.error);
+
+        return { empresa, adminEmail: data.adminEmail, adminPassword: data.adminPassword };
+      }
+
+      return { empresa };
+    },
+    onSuccess: (result) => {
+      if (result.adminEmail) {
+        toast.success("Empresa creada con administrador", {
+          description: `Admin: ${result.adminEmail}`,
+          duration: 8000,
+        });
+      } else {
+        toast.success("Empresa creada");
+      }
       queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      queryClient.invalidateQueries({ queryKey: ["empresas-admins"] });
       setDialogOpen(false);
     },
     onError: (e: any) => toast.error("Error: " + e.message),
@@ -59,6 +127,11 @@ const Empresas = () => {
     },
     onError: (e: any) => toast.error("Error: " + e.message),
   });
+
+  const openAssignAdmin = (empresaId: string, nombre: string) => {
+    setSelectedEmpresa({ id: empresaId, nombre });
+    setAssignAdminOpen(true);
+  };
 
   return (
     <MainLayout>
@@ -83,51 +156,78 @@ const Empresas = () => {
             ) : empresas.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No hay empresas registradas</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Rubro</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Creación</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {empresas.map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="font-medium">{e.nombre_empresa}</TableCell>
-                      <TableCell>{e.rubro || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">{e.plan || "basic"}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={e.estado === "activa" ? "default" : "destructive"}>
-                          {e.estado}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{e.email || "—"}</TableCell>
-                      <TableCell>{e.telefono || "—"}</TableCell>
-                      <TableCell>
-                        {e.fecha_creacion ? format(new Date(e.fecha_creacion), "dd/MM/yyyy") : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant={e.estado === "activa" ? "destructive" : "default"}
-                          size="sm"
-                          onClick={() => toggleEstadoMutation.mutate({ id: e.id, estado: e.estado })}
-                          disabled={toggleEstadoMutation.isPending}
-                        >
-                          {e.estado === "activa" ? "Suspender" : "Activar"}
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Administrador</TableHead>
+                      <TableHead>Rubro</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Creación</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {empresas.map((e) => {
+                      const admins = adminsByEmpresa[e.id] || [];
+                      return (
+                        <TableRow key={e.id}>
+                          <TableCell className="font-medium">{e.nombre_empresa}</TableCell>
+                          <TableCell>
+                            {admins.length > 0 ? (
+                              <div className="space-y-1">
+                                {admins.map((a, i) => (
+                                  <div key={i} className="text-sm">
+                                    <span className="font-medium">{a.full_name}</span>
+                                    <br />
+                                    <span className="text-muted-foreground text-xs">{a.email}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Sin admin</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{e.rubro || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">{e.plan || "basic"}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={e.estado === "activa" ? "default" : "destructive"}>
+                              {e.estado}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{e.email || "—"}</TableCell>
+                          <TableCell>
+                            {e.fecha_creacion ? format(new Date(e.fecha_creacion), "dd/MM/yyyy") : "—"}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openAssignAdmin(e.id, e.nombre_empresa)}
+                            >
+                              <UserPlus className="h-3.5 w-3.5 mr-1" />
+                              Asignar Admin
+                            </Button>
+                            <Button
+                              variant={e.estado === "activa" ? "destructive" : "default"}
+                              size="sm"
+                              onClick={() => toggleEstadoMutation.mutate({ id: e.id, estado: e.estado })}
+                              disabled={toggleEstadoMutation.isPending}
+                            >
+                              {e.estado === "activa" ? "Suspender" : "Activar"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -139,6 +239,18 @@ const Empresas = () => {
         onSave={(data) => createMutation.mutate(data)}
         loading={createMutation.isPending}
       />
+
+      {selectedEmpresa && (
+        <AssignAdminDialog
+          open={assignAdminOpen}
+          onOpenChange={setAssignAdminOpen}
+          empresaId={selectedEmpresa.id}
+          empresaNombre={selectedEmpresa.nombre}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["empresas-admins"] });
+          }}
+        />
+      )}
     </MainLayout>
   );
 };

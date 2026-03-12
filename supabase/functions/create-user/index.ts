@@ -13,16 +13,15 @@ interface CreateUserRequest {
   pin?: string
   roles: string[]
   defaultRole: string
+  empresaId?: string
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Verificar autenticación
     const authHeader = req.headers.get('Authorization') || ''
     if (!authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized: Missing or invalid token' }), {
@@ -40,12 +39,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Cliente con service role
     const supabaseService = createClient(supabaseUrl, serviceRole, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Decodificar JWT (el runtime ya lo validó)
     const jwt = authHeader.replace('Bearer ', '')
     let requesterId: string | null = null
     try {
@@ -60,7 +57,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Verificar que el solicitante es admin
     const { data: roles } = await supabaseService
       .from('user_roles')
       .select('role')
@@ -74,11 +70,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Parsear body
     const body: CreateUserRequest = await req.json()
     console.log('Creating user:', body.email)
 
-    // Validaciones
     if (!body.email || !body.password || !body.fullName) {
       throw new Error('Email, password and fullName are required')
     }
@@ -95,13 +89,10 @@ Deno.serve(async (req) => {
       throw new Error('Default role must be in assigned roles')
     }
 
-    // supabaseService ya creado arriba
-
-    // Crear usuario con admin API (ya confirmado)
     const { data: newUser, error: createError } = await supabaseService.auth.admin.createUser({
       email: body.email,
       password: body.password,
-      email_confirm: true, // Usuario ya confirmado
+      email_confirm: true,
       user_metadata: {
         full_name: body.fullName
       }
@@ -118,23 +109,31 @@ Deno.serve(async (req) => {
 
     console.log('User created:', newUser.user.id)
 
-    // Actualizar perfil con datos adicionales
+    // Update profile with additional data
+    const profileUpdate: Record<string, any> = {
+      phone: body.phone || null,
+      pin: body.pin || null,
+      is_active: true,
+      default_role: body.defaultRole,
+      email: body.email,
+    }
+
+    // If empresaId provided, link user to that specific empresa
+    if (body.empresaId) {
+      profileUpdate.empresa_id = body.empresaId
+      console.log('Linking user to empresa:', body.empresaId)
+    }
+
     const { error: profileError } = await supabaseService
       .from('profiles')
-      .update({
-        phone: body.phone || null,
-        pin: body.pin || null,
-        is_active: true,
-        default_role: body.defaultRole,
-        email: body.email
-      })
+      .update(profileUpdate)
       .eq('id', newUser.user.id)
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
     }
 
-    // Asignar roles
+    // Assign roles
     for (const role of body.roles) {
       const { error: roleError } = await supabaseService
         .from('user_roles')
@@ -144,7 +143,6 @@ Deno.serve(async (req) => {
         console.error('Error assigning role:', roleError)
       }
 
-      // Registrar en auditoría
       await supabaseService.from('role_assignment_logs').insert({
         user_id: newUser.user.id,
         role,
