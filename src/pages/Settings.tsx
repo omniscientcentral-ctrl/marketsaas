@@ -67,8 +67,8 @@ const Settings = () => {
   const availableTabs = [
     { id: "empresa", label: "Empresa", roles: ["admin"] },
     { id: "usuarios", label: "Usuarios", roles: ["admin", "supervisor"] },
+    { id: "cajas", label: "Cajas", roles: ["admin", "super_admin"] },
     ...(isSupportUser ? [
-      { id: "cajas", label: "Cajas", roles: ["admin", "supervisor"] },
       { id: "sistema", label: "Sistema", roles: ["admin"] },
     ] : []),
   ].filter(tab => activeRole && tab.roles.includes(activeRole.toLowerCase()));
