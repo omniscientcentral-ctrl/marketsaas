@@ -115,7 +115,7 @@ const Settings = () => {
             <UsersTab />
           </TabsContent>
 
-          {isSupportUser && (
+          {(activeRole === "admin" || activeRole === "super_admin") && (
             <TabsContent value="cajas">
               <CashRegistersTab />
             </TabsContent>
