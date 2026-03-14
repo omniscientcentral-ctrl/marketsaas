@@ -323,7 +323,8 @@ export default function Customers() {
           p_initial_debt: formData.initial_debt || 0,
           p_notes: formData.notes || null,
           p_status: formData.status || 'active',
-          p_cashier_id: user?.id || null
+          p_cashier_id: user?.id || null,
+          p_empresa_id: empresaId
         });
         if (rpcError) throw rpcError;
         toast({
