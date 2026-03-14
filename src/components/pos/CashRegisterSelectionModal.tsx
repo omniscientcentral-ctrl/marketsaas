@@ -56,6 +56,7 @@ export default function CashRegisterSelectionModal({
   canClose = false,
   onOpenChange,
 }: CashRegisterSelectionModalProps) {
+  const empresaId = useEmpresaId();
   const [loading, setLoading] = useState(false);
   const [mySessions, setMySessions] = useState<CashSession[]>([]);
   const [otherSessions, setOtherSessions] = useState<CashSession[]>([]);
