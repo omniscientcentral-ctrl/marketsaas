@@ -16,6 +16,7 @@ import { format } from "date-fns";
 const Empresas = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEmpresa, setEditingEmpresa] = useState<{ id: string; data: Partial<EmpresaFormData> } | null>(null);
   const [assignAdminOpen, setAssignAdminOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<{ id: string; nombre: string } | null>(null);
 
