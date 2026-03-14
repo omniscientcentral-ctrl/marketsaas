@@ -1,39 +1,51 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Fix global unique constraints on customers table for multi-tenant SaaS
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Root cause
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+The `customers` table has two unique constraints that are scoped globally instead of per-empresa:
+- `customers_document_key` — unique on `(document)` globally
+- `customers_phone_key` — unique on `(phone)` globally
 
-### Cambios en `src/pages/Customers.tsx`
+This means if Company A creates a customer with document "49035931", Company B (or even the same company retrying after a partial failure) cannot create a customer with the same document. In a SaaS model, uniqueness should be `(empresa_id, document)` and `(empresa_id, phone)`.
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+Additionally, the previous migration created the updated `create_customer_with_initial_debt` function with `p_empresa_id`, but the database still has the **old version without `p_empresa_id`** (visible in the db-functions dump). The old overload may be taking precedence, so the migration may not have applied or there are two overloads conflicting.
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+### Fix
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+**Database migration** with 3 changes:
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+1. Drop the global unique constraints:
+   - `customers_document_key`
+   - `customers_phone_key`
 
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+2. Create new composite unique indexes scoped per empresa:
+   - `UNIQUE (empresa_id, document)` — with a partial index excluding NULLs
+   - `UNIQUE (empresa_id, phone)` — with a partial index excluding NULLs
 
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+3. Drop the old `create_customer_with_initial_debt` overload (11 params, without `p_empresa_id`) so only the updated 12-param version remains.
+
+```sql
+-- Drop global unique constraints
+ALTER TABLE public.customers DROP CONSTRAINT IF EXISTS customers_document_key;
+ALTER TABLE public.customers DROP CONSTRAINT IF EXISTS customers_phone_key;
+
+-- Create per-empresa unique indexes (allowing NULLs)
+CREATE UNIQUE INDEX customers_empresa_document_key 
+ON public.customers (empresa_id, document) 
+WHERE document IS NOT NULL;
+
+CREATE UNIQUE INDEX customers_empresa_phone_key 
+ON public.customers (empresa_id, phone) 
+WHERE document IS NOT NULL;
+
+-- Drop old function overload without p_empresa_id
+DROP FUNCTION IF EXISTS public.create_customer_with_initial_debt(text, text, text, text, text, text, numeric, numeric, text, text, uuid);
+```
+
+### No frontend changes needed
+
+### Files to modify
+1. New database migration file only
 
