@@ -51,6 +51,7 @@ interface DebtPaymentModalProps {
 }
 
 const DebtPaymentModal = ({ open, onClose, customer, onPaymentComplete, mode = "total" }: DebtPaymentModalProps) => {
+  const empresaId = useEmpresaId();
   const [credits, setCredits] = useState<CreditSale[]>([]);
   const [loading, setLoading] = useState(false);
   const isProcessingRef = useRef(false);
