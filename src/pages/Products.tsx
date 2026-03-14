@@ -151,6 +151,7 @@ const Products = () => {
   };
 
   const fetchProducts = async (page: number = 1) => {
+    if (!empresaId) return;
     try {
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
@@ -159,7 +160,8 @@ const Products = () => {
       const { count, error: countErr } = await supabase
         .from("products")
         .select("*", { count: "exact", head: true })
-        .eq("active", true);
+        .eq("active", true)
+        .eq("empresa_id", empresaId);
 
       if (countErr) throw countErr;
       setTotalCount(count || 0);
@@ -169,6 +171,7 @@ const Products = () => {
         .from("products")
         .select("*")
         .eq("active", true)
+        .eq("empresa_id", empresaId)
         .order("name")
         .range(from, to);
 
