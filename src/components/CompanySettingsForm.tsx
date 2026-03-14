@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Building2, Loader2, Upload, Trash2, ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "image/svg+xml"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -38,6 +39,7 @@ export default function CompanySettingsForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const empresaId = useEmpresaId();
 
   const form = useForm<CompanySettingsFormData>({
     resolver: zodResolver(companySettingsSchema),
@@ -57,15 +59,15 @@ export default function CompanySettingsForm() {
   });
 
   useEffect(() => {
-    loadCompanySettings();
-  }, []);
+    if (empresaId) loadCompanySettings();
+  }, [empresaId]);
 
   const loadCompanySettings = async () => {
     try {
       const { data, error } = await supabase
         .from("company_settings")
         .select("*")
-        .limit(1)
+        .eq("empresa_id", empresaId!)
         .maybeSingle();
 
       if (error) throw error;
@@ -191,7 +193,7 @@ export default function CompanySettingsForm() {
         setLogoFile(null);
       }
 
-      const updateData = { ...data, logo_url: logoUrl || null };
+      const updateData = { ...data, logo_url: logoUrl || null, empresa_id: empresaId };
 
       if (settingsId) {
         const { error } = await supabase

@@ -1,35 +1,39 @@
 
 
-## Plan: Fix `company_settings` RLS violation for non-default empresa users
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Root cause
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-The `CompanySettingsForm` does not include `empresa_id` when loading or saving company settings. The `company_settings` table defaults `empresa_id` to the "Empresa Inicial" UUID, but the RLS policy requires `empresa_id = get_user_empresa_id(auth.uid())`. For users like Lucia (empresa `4d05a014-...`), the insert/update fails because the default UUID does not match her empresa.
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-### Fix
+### Cambios en `src/pages/Customers.tsx`
 
-**`src/components/CompanySettingsForm.tsx`** -- 3 changes:
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-1. Import and use `useEmpresaId` hook
-2. Filter the SELECT query by `empresa_id` so each company loads its own settings
-3. Include `empresa_id` in both INSERT and UPDATE payloads
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-```typescript
-import { useEmpresaId } from "@/hooks/useEmpresaId";
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
-// Inside component:
-const empresaId = useEmpresaId();
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
 
-// Load: filter by empresa
-.from("company_settings")
-.select("*")
-.eq("empresa_id", empresaId)
-.maybeSingle();
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
 
-// Save: include empresa_id in updateData
-const updateData = { ...data, logo_url: logoUrl || null, empresa_id: empresaId };
-```
-
-### Files to modify
-1. `src/components/CompanySettingsForm.tsx`
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 
