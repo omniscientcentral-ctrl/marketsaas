@@ -12,6 +12,7 @@ import { es } from "date-fns/locale";
 import { AlertCircle, CheckCircle2, DollarSign, History } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateDebtPaymentTicket } from "@/lib/pdfDebtPaymentGenerator";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface Customer {
   id: string;
