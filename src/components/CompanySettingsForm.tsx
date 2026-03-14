@@ -59,15 +59,15 @@ export default function CompanySettingsForm() {
   });
 
   useEffect(() => {
-    loadCompanySettings();
-  }, []);
+    if (empresaId) loadCompanySettings();
+  }, [empresaId]);
 
   const loadCompanySettings = async () => {
     try {
       const { data, error } = await supabase
         .from("company_settings")
         .select("*")
-        .limit(1)
+        .eq("empresa_id", empresaId!)
         .maybeSingle();
 
       if (error) throw error;
