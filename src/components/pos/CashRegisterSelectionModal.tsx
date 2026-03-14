@@ -83,7 +83,7 @@ export default function CashRegisterSelectionModal({
 
       // Usar la función get_cash_registers_status que muestra todas las cajas con su estado
       const { data: registers, error: registersError } = await supabase
-        .rpc('get_cash_registers_status');
+        .rpc('get_cash_registers_status', { p_empresa_id: empresaId });
       
       console.log('[CashRegisterModal] Registers status:', { registers, registersError });
 
