@@ -254,6 +254,7 @@ export default function CashRegisterSelectionModal({
           opening_amount: openingAmount,
           status: "open",
           opened_at: new Date().toISOString(),
+          empresa_id: empresaId,
         })
         .select(`
           id,
