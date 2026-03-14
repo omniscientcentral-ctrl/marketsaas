@@ -30,6 +30,7 @@ interface UserData {
 const Users = () => {
   const { userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const empresaId = useEmpresaId();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
