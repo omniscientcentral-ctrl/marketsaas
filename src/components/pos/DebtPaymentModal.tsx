@@ -12,6 +12,7 @@ import { es } from "date-fns/locale";
 import { AlertCircle, CheckCircle2, DollarSign, History } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateDebtPaymentTicket } from "@/lib/pdfDebtPaymentGenerator";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface Customer {
   id: string;
@@ -50,6 +51,7 @@ interface DebtPaymentModalProps {
 }
 
 const DebtPaymentModal = ({ open, onClose, customer, onPaymentComplete, mode = "total" }: DebtPaymentModalProps) => {
+  const empresaId = useEmpresaId();
   const [credits, setCredits] = useState<CreditSale[]>([]);
   const [loading, setLoading] = useState(false);
   const isProcessingRef = useRef(false);
@@ -202,6 +204,7 @@ const DebtPaymentModal = ({ open, onClose, customer, onPaymentComplete, mode = "
             payment_method: paymentMethod,
             received_by: user.id,
             payment_group_id: paymentGroupId,
+            empresa_id: empresaId,
           } as any);
 
         if (paymentError) throw paymentError;
