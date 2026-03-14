@@ -68,10 +68,11 @@ const Products = () => {
       navigate("/auth");
       return;
     }
+    if (!empresaId) return;
     fetchProducts(1);
     setCurrentPage(1);
     fetchBatchCounts();
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, empresaId]);
 
   // Auto-enfoque en el campo de búsqueda al montar y cuando se presiona cualquier tecla
   useEffect(() => {
