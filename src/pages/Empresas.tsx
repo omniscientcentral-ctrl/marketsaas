@@ -232,6 +232,24 @@ const Empresas = () => {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => setEditingEmpresa({
+                                id: e.id,
+                                data: {
+                                  nombre_empresa: e.nombre_empresa,
+                                  rubro: e.rubro || "",
+                                  email: e.email || "",
+                                  telefono: e.telefono || "",
+                                  plan: e.plan || "basic",
+                                  subdominio: e.subdominio || "",
+                                },
+                              })}
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => openAssignAdmin(e.id, e.nombre_empresa)}
                             >
                               <UserPlus className="h-3.5 w-3.5 mr-1" />
