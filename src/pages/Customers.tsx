@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { SaleDetailDialog } from "@/components/sales/SaleDetailDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export default function Customers() {
   const {
     toast
   } = useToast();
+  const empresaId = useEmpresaId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -323,7 +325,8 @@ export default function Customers() {
           p_initial_debt: formData.initial_debt || 0,
           p_notes: formData.notes || null,
           p_status: formData.status || 'active',
-          p_cashier_id: user?.id || null
+          p_cashier_id: user?.id || null,
+          p_empresa_id: empresaId
         });
         if (rpcError) throw rpcError;
         toast({
