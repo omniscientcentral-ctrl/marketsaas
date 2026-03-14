@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+export const GLOBAL_EMPRESAS_KEY = "__global__";
+
 interface Empresa {
   id: string;
   nombre_empresa: string;
@@ -15,6 +17,7 @@ interface EmpresaContextType {
   selectedEmpresa: Empresa | null;
   setSelectedEmpresaId: (id: string) => void;
   isSuperAdmin: boolean;
+  isGlobalMode: boolean;
   loading: boolean;
 }
 
@@ -24,6 +27,7 @@ const EmpresaContext = createContext<EmpresaContextType>({
   selectedEmpresa: null,
   setSelectedEmpresaId: () => {},
   isSuperAdmin: false,
+  isGlobalMode: false,
   loading: true,
 });
 
@@ -36,6 +40,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const isSuperAdmin = activeRole?.toLowerCase() === "super_admin";
+  const isGlobalMode = isSuperAdmin && selectedEmpresaId === GLOBAL_EMPRESAS_KEY;
 
   // Load empresas for super_admin
   useEffect(() => {
@@ -57,15 +62,19 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
 
         // Restore from localStorage or default to first active empresa
         const savedId = localStorage.getItem("super_admin_empresa_context");
-        const validSaved = data?.find((e) => e.id === savedId);
         
-        if (validSaved) {
-          setSelectedEmpresaIdState(validSaved.id);
+        if (savedId === GLOBAL_EMPRESAS_KEY) {
+          setSelectedEmpresaIdState(GLOBAL_EMPRESAS_KEY);
         } else {
-          const firstActive = data?.find((e) => e.estado === "activa");
-          if (firstActive) {
-            setSelectedEmpresaIdState(firstActive.id);
-            localStorage.setItem("super_admin_empresa_context", firstActive.id);
+          const validSaved = data?.find((e) => e.id === savedId);
+          if (validSaved) {
+            setSelectedEmpresaIdState(validSaved.id);
+          } else {
+            const firstActive = data?.find((e) => e.estado === "activa");
+            if (firstActive) {
+              setSelectedEmpresaIdState(firstActive.id);
+              localStorage.setItem("super_admin_empresa_context", firstActive.id);
+            }
           }
         }
       } catch (error) {
@@ -108,16 +117,19 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("super_admin_empresa_context", id);
   };
 
-  const selectedEmpresa = empresas.find((e) => e.id === selectedEmpresaId) || null;
+  const selectedEmpresa = isGlobalMode
+    ? null
+    : empresas.find((e) => e.id === selectedEmpresaId) || null;
 
   return (
     <EmpresaContext.Provider
       value={{
         empresas,
-        selectedEmpresaId,
+        selectedEmpresaId: isGlobalMode ? null : selectedEmpresaId,
         selectedEmpresa,
         setSelectedEmpresaId,
         isSuperAdmin,
+        isGlobalMode,
         loading,
       }}
     >
