@@ -1,39 +1,38 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Fix user creation — send `empresaId` + fix Users page tenant isolation
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Problem 1: Missing `empresaId` in user creation
+The `CreateUserDialog` does NOT send `empresaId` to the `create-user` edge function. New users created by an admin won't be linked to the correct empresa. The edge function already supports `empresaId` in the body.
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+### Problem 2: Users page shows all companies' users
+`fetchUsers` in `Users.tsx` queries all `profiles` without filtering by `empresa_id`, so an admin of "RN" sees users from all empresas.
 
-### Cambios en `src/pages/Customers.tsx`
+### Problem 3: UX — no clear email validation feedback
+The email field doesn't validate format before submission, leading to confusing errors like "Edge Function returned a non-2xx status code" instead of "Invalid email format".
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+### Note on the immediate error
+The user entered "Cajero01" (not a valid email) in the Email field and put the email address in the Name field. The fix below adds client-side validation to catch this earlier.
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+---
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+### Changes
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+#### 1. `src/components/users/CreateUserDialog.tsx`
+- Accept `empresaId` as a prop
+- Send `empresaId` in the edge function body
+- Add basic email format validation before submission
 
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+#### 2. `src/pages/Users.tsx`
+- Import `useEmpresaId`
+- Pass `empresaId` to `CreateUserDialog`
+- Filter `profiles` query by `.eq("empresa_id", empresaId)`
+- Add `empresaId` to `useEffect` dependency array
 
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+#### 3. `src/components/settings/UsersTab.tsx` (if it renders CreateUserDialog)
+- Same: pass `empresaId` prop
+
+### Files to modify
+- `src/components/users/CreateUserDialog.tsx`
+- `src/pages/Users.tsx`
 
