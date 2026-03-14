@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import MainLayout from "@/components/layout/MainLayout";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface Product {
   id: string;
@@ -35,6 +36,7 @@ const ITEMS_PER_PAGE = 20;
 const Products = () => {
   const { user, loading, activeRole } = useAuth();
   const navigate = useNavigate();
+  const empresaId = useEmpresaId();
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -329,6 +331,7 @@ const Products = () => {
                 new_stock: newStock,
                 reason: `Ajuste manual desde edición de producto por ${user?.email}`,
                 performed_by: user?.id,
+                empresa_id: empresaId,
               });
 
             if (stockError) throw stockError;
@@ -366,6 +369,7 @@ const Products = () => {
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
           category: formData.category || null,
+          empresa_id: empresaId,
         };
 
         const { data: newProduct, error } = await supabase
@@ -381,6 +385,7 @@ const Products = () => {
           product_id: newProduct.id,
           current_balance: newStock,
           last_movement_at: new Date().toISOString(),
+          empresa_id: empresaId,
         });
 
         toast.success("Producto creado");
@@ -790,6 +795,7 @@ const Products = () => {
                                   quantity: 0,
                                   reason: `Stock ${checked ? 'desactivado' : 'activado'} por ${user?.email}`,
                                   performed_by: user?.id,
+                                  empresa_id: empresaId,
                                 });
                                 
                                 toast.success(`Stock ${checked ? 'desactivado' : 'activado'}`);
