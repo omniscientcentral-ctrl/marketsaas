@@ -37,6 +37,7 @@ export default function CashClosure() {
   const [printType, setPrintType] = useState<"a4" | "tickeadora" | "no_imprimir">("no_imprimir");
   const [approvalThreshold, setApprovalThreshold] = useState<number>(50);
   const { notifyCashClosureWithDifference, notifyCashOpening, notifyCashClosureZ } = useNotifications();
+  const empresaId = useEmpresaId();
 
   useEffect(() => {
     // Esperar a que termine la carga de autenticación
