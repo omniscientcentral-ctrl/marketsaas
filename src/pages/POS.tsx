@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -87,6 +88,7 @@ interface CashSession {
 }
 const POS = () => {
   const { user, loading, activeRole } = useAuth();
+  const empresaId = useEmpresaId();
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -673,6 +675,7 @@ const POS = () => {
       const { error } = await supabase.from("pending_sales").insert([
         {
           cashier_id: user?.id,
+          empresa_id: empresaId,
           customer_name: selectedCustomer?.name || null,
           customer_id: selectedCustomer?.id || null,
           items: cart as any,
