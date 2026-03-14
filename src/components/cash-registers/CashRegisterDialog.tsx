@@ -39,6 +39,7 @@ interface CashRegisterDialogProps {
 
 export const CashRegisterDialog = ({ open, onOpenChange, register, onSuccess }: CashRegisterDialogProps) => {
   const { user } = useAuth();
+  const empresaId = useEmpresaId();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
