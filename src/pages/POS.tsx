@@ -1397,6 +1397,7 @@ const POS = () => {
       if (saleError) throw saleError;
       const saleItems = cart.map((item) => ({
         sale_id: sale.id,
+        empresa_id: empresaId,
         product_id: item.product.id.startsWith("generic-") ? null : item.product.id,
         product_name: item.product.name,
         quantity: item.quantity,
