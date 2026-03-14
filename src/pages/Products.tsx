@@ -68,10 +68,11 @@ const Products = () => {
       navigate("/auth");
       return;
     }
+    if (!empresaId) return;
     fetchProducts(1);
     setCurrentPage(1);
     fetchBatchCounts();
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, empresaId]);
 
   // Auto-enfoque en el campo de búsqueda al montar y cuando se presiona cualquier tecla
   useEffect(() => {
@@ -129,11 +130,13 @@ const Products = () => {
   };
 
   const fetchBatchCounts = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from("product_batches")
         .select("product_id, id")
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("empresa_id", empresaId);
 
       if (error) throw error;
 
@@ -148,6 +151,7 @@ const Products = () => {
   };
 
   const fetchProducts = async (page: number = 1) => {
+    if (!empresaId) return;
     try {
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
@@ -156,7 +160,8 @@ const Products = () => {
       const { count, error: countErr } = await supabase
         .from("products")
         .select("*", { count: "exact", head: true })
-        .eq("active", true);
+        .eq("active", true)
+        .eq("empresa_id", empresaId);
 
       if (countErr) throw countErr;
       setTotalCount(count || 0);
@@ -166,6 +171,7 @@ const Products = () => {
         .from("products")
         .select("*")
         .eq("active", true)
+        .eq("empresa_id", empresaId)
         .order("name")
         .range(from, to);
 
@@ -195,17 +201,20 @@ const Products = () => {
 
     const timer = setTimeout(async () => {
       try {
+        if (!empresaId) return;
         const [exactRes, partialRes] = await Promise.all([
           supabase
             .from("products")
             .select("*")
             .eq("active", true)
+            .eq("empresa_id", empresaId)
             .eq("barcode", term)
             .limit(10),
           supabase
             .from("products")
             .select("*")
             .eq("active", true)
+            .eq("empresa_id", empresaId)
             .or(`barcode.ilike.%${term}%,name.ilike.%${term}%,category.ilike.%${term}%`)
             .order("name")
             .limit(50),
