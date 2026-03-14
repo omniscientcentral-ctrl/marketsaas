@@ -1237,6 +1237,10 @@ const POS = () => {
       toast.error("El carrito está vacío");
       return;
     }
+    if (!empresaId) {
+      toast.error("Error: no se pudo determinar la empresa. Recargue la página.");
+      return;
+    }
     const total = getTotal();
 
     // Determinar si excede para marcar la venta en notas
