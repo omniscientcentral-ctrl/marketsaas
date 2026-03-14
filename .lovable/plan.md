@@ -1,39 +1,24 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Permitir asignar super_admin a empresas
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Problema
+El filtro en `AssignAdminDialog` excluye a los usuarios con rol `super_admin` de la lista de usuarios disponibles (línea 46-52), impidiendo que el super_admin se asigne a sí mismo u otro super_admin a una empresa.
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+### Cambio
 
-### Cambios en `src/pages/Customers.tsx`
+**Archivo: `src/components/empresas/AssignAdminDialog.tsx`**
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+Eliminar el filtro que excluye `super_admin` de la lista. Solo mantener el filtro de que el usuario no esté ya asignado a esa misma empresa:
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+```text
+Antes:
+  const superAdminIds = new Set(...);
+  return profiles.filter(p => !superAdminIds.has(p.id) && p.empresa_id !== empresaId);
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+Después:
+  return profiles.filter(p => p.empresa_id !== empresaId);
+```
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
-
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
-
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+Esto permitirá que cualquier usuario del sistema (incluidos super_admins) aparezca como opción para ser asignado como administrador de una empresa.
 
