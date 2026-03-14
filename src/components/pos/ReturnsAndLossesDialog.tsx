@@ -57,6 +57,7 @@ interface ReturnsAndLossesDialogProps {
 }
 
 export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSessionId }: ReturnsAndLossesDialogProps) {
+  const empresaId = useEmpresaId();
   const [returnType, setReturnType] = useState<"merma" | "devolucion">("merma");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<string>("1");
