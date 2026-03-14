@@ -56,7 +56,7 @@ const Users = () => {
     if (userRole && allowedRoles.includes(userRole)) {
       fetchUsers();
     }
-  }, [userRole]);
+  }, [userRole, empresaId]);
 
   const fetchUsers = async () => {
     try {
