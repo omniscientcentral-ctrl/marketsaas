@@ -1382,6 +1382,7 @@ const POS = () => {
         .from("sales")
         .insert({
           cashier_id: user?.id,
+          empresa_id: empresaId,
           customer_id: selectedCustomer?.id || null,
           customer_name: selectedCustomer?.name || null,
           total,
