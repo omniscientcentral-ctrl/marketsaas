@@ -1,39 +1,28 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Fix "Cajas" tab not activating in Settings
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Root cause
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+Line 51 in `Settings.tsx`:
+```typescript
+if ((tabParam === "cajas" || tabParam === "sistema") && !isSupportUser) {
+```
 
-### Cambios en `src/pages/Customers.tsx`
+This guard was meant to restrict only the "sistema" tab to the support user, but it also blocks the "cajas" tab for everyone else. When any non-support admin clicks "Cajas", the URL updates to `?tab=cajas`, the `useEffect` fires, sees `!isSupportUser`, and resets the tab.
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+### Fix
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+**File: `src/pages/Settings.tsx`** (line 51)
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+Change the condition to only restrict the "sistema" tab:
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+```typescript
+if (tabParam === "sistema" && !isSupportUser) {
+```
 
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+This allows admins and super_admins to access the "cajas" tab normally while keeping "sistema" restricted to the support user.
 
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+### Files to modify
+1. `src/pages/Settings.tsx` — one line change
 
