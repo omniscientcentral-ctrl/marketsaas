@@ -116,6 +116,29 @@ const Empresas = () => {
     onError: (e: any) => toast.error("Error: " + e.message),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EmpresaFormData }) => {
+      const { error } = await supabase
+        .from("empresas")
+        .update({
+          nombre_empresa: data.nombre_empresa,
+          rubro: data.rubro || null,
+          email: data.email || null,
+          telefono: data.telefono || null,
+          plan: data.plan || "basic",
+          subdominio: data.subdominio || null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Empresa actualizada");
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      setEditingEmpresa(null);
+    },
+    onError: (e: any) => toast.error("Error: " + e.message),
+  });
+
   const toggleEstadoMutation = useMutation({
     mutationFn: async ({ id, estado }: { id: string; estado: string }) => {
       const newEstado = estado === "activa" ? "suspendida" : "activa";
