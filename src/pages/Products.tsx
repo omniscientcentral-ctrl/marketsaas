@@ -330,6 +330,7 @@ const Products = () => {
                 new_stock: newStock,
                 reason: `Ajuste manual desde edición de producto por ${user?.email}`,
                 performed_by: user?.id,
+                empresa_id: empresaId,
               });
 
             if (stockError) throw stockError;
