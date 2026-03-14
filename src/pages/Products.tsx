@@ -201,17 +201,20 @@ const Products = () => {
 
     const timer = setTimeout(async () => {
       try {
+        if (!empresaId) return;
         const [exactRes, partialRes] = await Promise.all([
           supabase
             .from("products")
             .select("*")
             .eq("active", true)
+            .eq("empresa_id", empresaId)
             .eq("barcode", term)
             .limit(10),
           supabase
             .from("products")
             .select("*")
             .eq("active", true)
+            .eq("empresa_id", empresaId)
             .or(`barcode.ilike.%${term}%,name.ilike.%${term}%,category.ilike.%${term}%`)
             .order("name")
             .limit(50),
