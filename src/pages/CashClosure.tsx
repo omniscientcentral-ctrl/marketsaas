@@ -347,6 +347,7 @@ export default function CashClosure() {
           opening_amount: openingAmount,
           status: "open",
           opened_at: new Date().toISOString(),
+          empresa_id: empresaId,
         })
         .select()
         .single();
