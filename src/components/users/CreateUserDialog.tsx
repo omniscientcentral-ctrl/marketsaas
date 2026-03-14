@@ -87,7 +87,8 @@ export const CreateUserDialog = ({ open, onOpenChange, onUserCreated, empresaId 
           phone: phone || null,
           pin: pin || null,
           roles: selectedRoles,
-          defaultRole
+          defaultRole,
+          empresaId: empresaId || undefined
         }
       });
 
