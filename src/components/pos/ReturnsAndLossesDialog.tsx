@@ -12,6 +12,7 @@ import { PackageMinus, AlertTriangle } from "lucide-react";
 import SupervisorPinDialog from "./SupervisorPinDialog";
 import ProductSearchAutocomplete from "./ProductSearchAutocomplete";
 import CustomerSelectDialog from "./CustomerSelectDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 // Mapeo de valores frontend → valores permitidos en la base de datos
 const RETURN_TYPE_MAP = {
