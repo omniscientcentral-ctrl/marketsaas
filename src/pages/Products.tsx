@@ -130,11 +130,13 @@ const Products = () => {
   };
 
   const fetchBatchCounts = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from("product_batches")
         .select("product_id, id")
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("empresa_id", empresaId);
 
       if (error) throw error;
 
