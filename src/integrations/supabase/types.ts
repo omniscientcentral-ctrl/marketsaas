@@ -1810,6 +1810,7 @@ export type Database = {
           batch_id: string | null
           batch_number: string | null
           days_until_expiry: number | null
+          empresa_id: string | null
           expiration_date: string | null
           product_id: string | null
           product_name: string | null
@@ -1821,6 +1822,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
         ]

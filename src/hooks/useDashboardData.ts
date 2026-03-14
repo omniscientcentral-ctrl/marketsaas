@@ -549,12 +549,14 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
 
   const loadExpiringProducts = useCallback(async () => {
     try {
-      const { data } = await supabase
-        .from("products_expiring_soon")
-        .select("*")
-        .gt("quantity", 0)
-        .order("days_until_expiry", { ascending: true })
-        .limit(20);
+      const { data } = await withEmpresa(
+        supabase
+          .from("products_expiring_soon")
+          .select("*")
+          .gt("quantity", 0)
+          .order("days_until_expiry", { ascending: true })
+          .limit(20)
+      );
 
       if (data) {
         setExpiringProducts(data.map((p) => ({
@@ -586,7 +588,7 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
     } catch (error) {
       console.error("Error loading expiring products:", error);
     }
-  }, []);
+  }, [withEmpresa]);
 
   const loadCreditEvolution = useCallback(async () => {
     try {
