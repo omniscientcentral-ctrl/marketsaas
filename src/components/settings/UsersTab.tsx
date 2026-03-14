@@ -46,10 +46,16 @@ const UsersTab = () => {
     try {
       setLoading(true);
 
-      const { data: profiles, error: profilesError } = await supabase
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .order("full_name");
+
+      if (empresaId) {
+        profilesQuery = profilesQuery.eq("empresa_id", empresaId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
       if (profilesError) throw profilesError;
 
