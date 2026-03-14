@@ -36,6 +36,7 @@ const ITEMS_PER_PAGE = 20;
 const Products = () => {
   const { user, loading, activeRole } = useAuth();
   const navigate = useNavigate();
+  const empresaId = useEmpresaId();
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
