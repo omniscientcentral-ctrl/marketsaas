@@ -93,6 +93,7 @@ export const CashRegisterDialog = ({ open, onOpenChange, register, onSuccess }: 
             name: values.name.trim(),
             location: values.location?.trim() || null,
             is_active: true,
+            empresa_id: empresaId,
           })
           .select()
           .single();
