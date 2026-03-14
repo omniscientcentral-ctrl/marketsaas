@@ -383,6 +383,7 @@ const Products = () => {
           product_id: newProduct.id,
           current_balance: newStock,
           last_movement_at: new Date().toISOString(),
+          empresa_id: empresaId,
         });
 
         toast.success("Producto creado");
