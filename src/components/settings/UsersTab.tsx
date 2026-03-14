@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface UserData {
 
 const UsersTab = () => {
   const { userRole } = useAuth();
+  const empresaId = useEmpresaId();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,16 +40,22 @@ const UsersTab = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [empresaId]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
 
-      const { data: profiles, error: profilesError } = await supabase
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .order("full_name");
+
+      if (empresaId) {
+        profilesQuery = profilesQuery.eq("empresa_id", empresaId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
       if (profilesError) throw profilesError;
 
@@ -396,6 +404,7 @@ const UsersTab = () => {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onUserCreated={fetchUsers}
+        empresaId={empresaId}
       />
 
       <UserAuditDialog

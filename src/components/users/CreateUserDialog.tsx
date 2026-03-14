@@ -12,12 +12,13 @@ interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated: () => void;
+  empresaId?: string | null;
   children?: React.ReactNode;
 }
 
 const AVAILABLE_ROLES = ["admin", "supervisor", "cajero", "repositor"];
 
-export const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialogProps) => {
+export const CreateUserDialog = ({ open, onOpenChange, onUserCreated, empresaId }: CreateUserDialogProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -44,6 +45,12 @@ export const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUs
   const handleCreate = async () => {
     if (!email || !password || !fullName) {
       toast.error("Email, contraseña y nombre son obligatorios");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("El formato del email no es válido");
       return;
     }
 
@@ -80,7 +87,8 @@ export const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUs
           phone: phone || null,
           pin: pin || null,
           roles: selectedRoles,
-          defaultRole
+          defaultRole,
+          empresaId: empresaId || undefined
         }
       });
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import MainLayout from "@/components/layout/MainLayout";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface UserData {
 const Users = () => {
   const { userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const empresaId = useEmpresaId();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,17 +56,23 @@ const Users = () => {
     if (userRole && allowedRoles.includes(userRole)) {
       fetchUsers();
     }
-  }, [userRole]);
+  }, [userRole, empresaId]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
 
-      // Obtener perfiles
-      const { data: profiles, error: profilesError } = await supabase
+      // Obtener perfiles filtrados por empresa
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .order("full_name");
+
+      if (empresaId) {
+        profilesQuery = profilesQuery.eq("empresa_id", empresaId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
       if (profilesError) throw profilesError;
 
@@ -424,6 +432,7 @@ const Users = () => {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onUserCreated={fetchUsers}
+        empresaId={empresaId}
       />
 
       <UserAuditDialog
