@@ -1322,6 +1322,7 @@ const POS = () => {
       // Create credit record
       const { error: creditError } = await supabase.from("credits").insert({
         sale_id: sale.id,
+        empresa_id: empresaId,
         customer_id: customer.id,
         customer_name: `${customer.name} ${customer.last_name || ""}`.trim(),
         customer_phone: customer.phone,
