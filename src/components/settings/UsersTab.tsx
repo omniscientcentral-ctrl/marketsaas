@@ -40,7 +40,7 @@ const UsersTab = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [empresaId]);
 
   const fetchUsers = async () => {
     try {
