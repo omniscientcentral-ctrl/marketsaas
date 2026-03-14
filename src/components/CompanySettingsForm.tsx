@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Building2, Loader2, Upload, Trash2, ImageIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "image/svg+xml"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
