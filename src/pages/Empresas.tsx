@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Building2, UserPlus } from "lucide-react";
+import { Plus, Building2, UserPlus, Pencil } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { format } from "date-fns";
 const Empresas = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEmpresa, setEditingEmpresa] = useState<{ id: string; data: Partial<EmpresaFormData> } | null>(null);
   const [assignAdminOpen, setAssignAdminOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<{ id: string; nombre: string } | null>(null);
 
@@ -115,6 +116,29 @@ const Empresas = () => {
     onError: (e: any) => toast.error("Error: " + e.message),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EmpresaFormData }) => {
+      const { error } = await supabase
+        .from("empresas")
+        .update({
+          nombre_empresa: data.nombre_empresa,
+          rubro: data.rubro || null,
+          email: data.email || null,
+          telefono: data.telefono || null,
+          plan: data.plan || "basic",
+          subdominio: data.subdominio || null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Empresa actualizada");
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      setEditingEmpresa(null);
+    },
+    onError: (e: any) => toast.error("Error: " + e.message),
+  });
+
   const toggleEstadoMutation = useMutation({
     mutationFn: async ({ id, estado }: { id: string; estado: string }) => {
       const newEstado = estado === "activa" ? "suspendida" : "activa";
@@ -208,6 +232,24 @@ const Empresas = () => {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => setEditingEmpresa({
+                                id: e.id,
+                                data: {
+                                  nombre_empresa: e.nombre_empresa,
+                                  rubro: e.rubro || "",
+                                  email: e.email || "",
+                                  telefono: e.telefono || "",
+                                  plan: e.plan || "basic",
+                                  subdominio: e.subdominio || "",
+                                },
+                              })}
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => openAssignAdmin(e.id, e.nombre_empresa)}
                             >
                               <UserPlus className="h-3.5 w-3.5 mr-1" />
@@ -238,6 +280,14 @@ const Empresas = () => {
         onOpenChange={setDialogOpen}
         onSave={(data) => createMutation.mutate(data)}
         loading={createMutation.isPending}
+      />
+
+      <EmpresaDialog
+        open={!!editingEmpresa}
+        onOpenChange={(open) => { if (!open) setEditingEmpresa(null); }}
+        onSave={(data) => editingEmpresa && updateMutation.mutate({ id: editingEmpresa.id, data })}
+        initialData={editingEmpresa?.data}
+        loading={updateMutation.isPending}
       />
 
       {selectedEmpresa && (
