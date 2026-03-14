@@ -88,6 +88,7 @@ interface CashSession {
 }
 const POS = () => {
   const { user, loading, activeRole } = useAuth();
+  const empresaId = useEmpresaId();
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
