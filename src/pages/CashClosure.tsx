@@ -15,6 +15,7 @@ import { CashClosureStep5 } from "@/components/cash-closure/CashClosureStep5";
 import { CashOpenStep } from "@/components/cash-closure/CashOpenStep";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getHomePathForRole } from "@/config/navigation";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export default function CashClosure() {
   const { user, activeRole, loading: authLoading } = useAuth();
