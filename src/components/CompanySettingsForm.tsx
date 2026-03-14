@@ -193,7 +193,7 @@ export default function CompanySettingsForm() {
         setLogoFile(null);
       }
 
-      const updateData = { ...data, logo_url: logoUrl || null };
+      const updateData = { ...data, logo_url: logoUrl || null, empresa_id: empresaId };
 
       if (settingsId) {
         const { error } = await supabase
