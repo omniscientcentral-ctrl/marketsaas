@@ -12,6 +12,7 @@ interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUserCreated: () => void;
+  empresaId?: string | null;
   children?: React.ReactNode;
 }
 
