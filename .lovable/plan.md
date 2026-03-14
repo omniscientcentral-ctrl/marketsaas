@@ -1,39 +1,33 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Permitir seleccionar usuario existente en "Asignar Admin"
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Cambio
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+Modificar `AssignAdminDialog` para ofrecer dos modos con tabs/toggle:
+1. **Seleccionar existente** — muestra un select/combobox con usuarios que no tienen `empresa_id` asignada o que pertenecen a otra empresa (profiles sin empresa o disponibles). Al seleccionar uno, se actualiza su `empresa_id` y se le asigna el rol `admin`.
+2. **Crear nuevo** — formulario actual (nombre, email, contraseña, teléfono).
 
-### Cambios en `src/pages/Customers.tsx`
+### Detalle técnico
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+**`AssignAdminDialog.tsx`**:
+- Agregar estado `mode: "existing" | "new"` con toggle visual (Tabs o botones).
+- En modo "existing": query `profiles` para listar usuarios disponibles (que no sean super_admin). Mostrar un Select con nombre + email.
+- Al asignar usuario existente:
+  - `UPDATE profiles SET empresa_id = empresaId WHERE id = selectedUserId`
+  - `UPSERT user_roles` con rol `admin` para ese usuario (via edge function o directamente si RLS lo permite)
+  - Como el super_admin tiene full access a profiles y user_roles, se puede hacer directamente desde el cliente.
+- En modo "new": mantener el flujo actual con `create-user`.
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+**Flujo "existente"**:
+```text
+1. SELECT profiles (id, full_name, email) WHERE empresa_id IS NULL OR filtro
+2. Usuario selecciona uno
+3. UPDATE profiles SET empresa_id = empresaId WHERE id = selected
+4. INSERT INTO user_roles (user_id, role) VALUES (selected, 'admin') ON CONFLICT DO NOTHING
+5. Toast éxito
+```
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
-
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
-
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
-
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+### Archivo a modificar
+- `src/components/empresas/AssignAdminDialog.tsx`
 
