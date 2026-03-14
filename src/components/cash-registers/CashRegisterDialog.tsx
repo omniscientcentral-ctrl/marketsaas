@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -38,6 +39,7 @@ interface CashRegisterDialogProps {
 
 export const CashRegisterDialog = ({ open, onOpenChange, register, onSuccess }: CashRegisterDialogProps) => {
   const { user } = useAuth();
+  const empresaId = useEmpresaId();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -91,6 +93,7 @@ export const CashRegisterDialog = ({ open, onOpenChange, register, onSuccess }: 
             name: values.name.trim(),
             location: values.location?.trim() || null,
             is_active: true,
+            empresa_id: empresaId,
           })
           .select()
           .single();
