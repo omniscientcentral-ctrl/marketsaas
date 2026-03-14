@@ -38,18 +38,9 @@ const AssignAdminDialog = ({ open, onOpenChange, empresaId, empresaNombre, onSuc
         .select("id, full_name, email, empresa_id");
       if (error) throw error;
 
-      // Get super_admin user ids to exclude
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      const superAdminIds = new Set(
-        roles?.filter((r) => r.role === "super_admin").map((r) => r.user_id) || []
-      );
-
-      // Filter: not super_admin, and not already in this empresa
+      // Filter: not already in this empresa
       return (profiles || []).filter(
-        (p) => !superAdminIds.has(p.id) && p.empresa_id !== empresaId
+        (p) => p.empresa_id !== empresaId
       );
     },
   });
