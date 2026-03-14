@@ -23,6 +23,7 @@ interface CashRegister {
 
 const CashRegistersTab = () => {
   const { user } = useAuth();
+  const empresaId = useEmpresaId();
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
