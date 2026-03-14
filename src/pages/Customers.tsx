@@ -57,6 +57,7 @@ export default function Customers() {
   const {
     toast
   } = useToast();
+  const empresaId = useEmpresaId();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
