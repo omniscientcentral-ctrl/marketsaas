@@ -48,6 +48,12 @@ export const CreateUserDialog = ({ open, onOpenChange, onUserCreated, empresaId 
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("El formato del email no es válido");
+      return;
+    }
+
     if (password.length < 5) {
       toast.error("La contraseña debe tener al menos 5 caracteres");
       return;
