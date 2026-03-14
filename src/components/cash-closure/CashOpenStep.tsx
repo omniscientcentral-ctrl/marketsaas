@@ -42,7 +42,7 @@ export function CashOpenStep({
     try {
       // Mostrar solo cajas activas y disponibles (sin sesión abierta)
       const { data, error } = await supabase
-        .rpc('get_cash_registers_status');
+        .rpc('get_cash_registers_status', { p_empresa_id: empresaId });
 
       if (error) throw error;
       // Filtrar cajas sin sesión abierta (current_session_id es null)

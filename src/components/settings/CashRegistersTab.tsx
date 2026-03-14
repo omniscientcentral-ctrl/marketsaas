@@ -38,10 +38,16 @@ const CashRegistersTab = () => {
 
   const loadCashRegisters = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('cash_registers')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         if (error.code === 'PGRST301' || error.message.includes('permission')) {
