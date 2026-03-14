@@ -1842,40 +1842,23 @@ export type Database = {
       }
     }
     Functions: {
-      create_customer_with_initial_debt:
-        | {
-            Args: {
-              p_address?: string
-              p_cashier_id?: string
-              p_credit_limit?: number
-              p_document?: string
-              p_initial_debt?: number
-              p_last_name?: string
-              p_name: string
-              p_notes?: string
-              p_phone?: string
-              p_rut?: string
-              p_status?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_address?: string
-              p_cashier_id?: string
-              p_credit_limit?: number
-              p_document?: string
-              p_empresa_id?: string
-              p_initial_debt?: number
-              p_last_name?: string
-              p_name: string
-              p_notes?: string
-              p_phone?: string
-              p_rut?: string
-              p_status?: string
-            }
-            Returns: string
-          }
+      create_customer_with_initial_debt: {
+        Args: {
+          p_address?: string
+          p_cashier_id?: string
+          p_credit_limit?: number
+          p_document?: string
+          p_empresa_id?: string
+          p_initial_debt?: number
+          p_last_name?: string
+          p_name: string
+          p_notes?: string
+          p_phone?: string
+          p_rut?: string
+          p_status?: string
+        }
+        Returns: string
+      }
       get_admin_and_supervisor_user_ids: { Args: never; Returns: string[] }
       get_admin_user_ids: { Args: never; Returns: string[] }
       get_cash_registers_status:
