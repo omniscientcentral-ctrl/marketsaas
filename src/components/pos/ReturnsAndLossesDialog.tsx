@@ -12,6 +12,7 @@ import { PackageMinus, AlertTriangle } from "lucide-react";
 import SupervisorPinDialog from "./SupervisorPinDialog";
 import ProductSearchAutocomplete from "./ProductSearchAutocomplete";
 import CustomerSelectDialog from "./CustomerSelectDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 // Mapeo de valores frontend → valores permitidos en la base de datos
 const RETURN_TYPE_MAP = {
@@ -56,6 +57,7 @@ interface ReturnsAndLossesDialogProps {
 }
 
 export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSessionId }: ReturnsAndLossesDialogProps) {
+  const empresaId = useEmpresaId();
   const [returnType, setReturnType] = useState<"merma" | "devolucion">("merma");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<string>("1");
@@ -176,6 +178,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
           performed_by: user.id,
           authorized_by: supervisorId,
           cash_register_session_id: cashRegisterSessionId || null,
+          empresa_id: empresaId,
         })
         .select()
         .single();
@@ -220,6 +223,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
           notes: `${returnType === "merma" ? "Merma" : "Devolución"}: ${reason}`,
           performed_by: user.id,
           reason: RETURN_TYPE_MAP[returnType],
+          empresa_id: empresaId,
         });
 
       if (movementError) throw movementError;
@@ -255,6 +259,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
             amount: refundAmt,
             category: "devolucion",
             created_by: user.id,
+            empresa_id: empresaId,
           });
 
         if (expenseError) console.error("Error registrando egreso:", expenseError);
