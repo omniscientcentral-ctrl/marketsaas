@@ -1283,6 +1283,7 @@ const POS = () => {
           // Registrar movimiento de stock (historial)
           await supabase.from("stock_movements").insert({
             product_id: item.product.id,
+            empresa_id: empresaId,
             movement_type: "sale",
             quantity: item.quantity,
             previous_stock: previousStock,
