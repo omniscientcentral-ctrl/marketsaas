@@ -674,6 +674,7 @@ const POS = () => {
       const { error } = await supabase.from("pending_sales").insert([
         {
           cashier_id: user?.id,
+          empresa_id: empresaId,
           customer_name: selectedCustomer?.name || null,
           customer_id: selectedCustomer?.id || null,
           items: cart as any,
