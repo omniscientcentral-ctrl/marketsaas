@@ -62,11 +62,17 @@ const Users = () => {
     try {
       setLoading(true);
 
-      // Obtener perfiles
-      const { data: profiles, error: profilesError } = await supabase
+      // Obtener perfiles filtrados por empresa
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .order("full_name");
+
+      if (empresaId) {
+        profilesQuery = profilesQuery.eq("empresa_id", empresaId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
       if (profilesError) throw profilesError;
 
