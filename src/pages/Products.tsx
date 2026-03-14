@@ -367,6 +367,7 @@ const Products = () => {
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
           category: formData.category || null,
+          empresa_id: empresaId,
         };
 
         const { data: newProduct, error } = await supabase
