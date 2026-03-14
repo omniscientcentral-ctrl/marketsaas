@@ -1237,6 +1237,10 @@ const POS = () => {
       toast.error("El carrito está vacío");
       return;
     }
+    if (!empresaId) {
+      toast.error("Error: no se pudo determinar la empresa. Recargue la página.");
+      return;
+    }
     const total = getTotal();
 
     // Determinar si excede para marcar la venta en notas
@@ -1368,12 +1372,19 @@ const POS = () => {
     isProcessingSaleRef.current = true;
     if (cart.length === 0) {
       toast.error("El carrito está vacío");
+      isProcessingSaleRef.current = false;
+      return;
+    }
+    if (!empresaId) {
+      toast.error("Error: no se pudo determinar la empresa. Recargue la página.");
+      isProcessingSaleRef.current = false;
       return;
     }
     const total = getTotal();
     if (paymentMethod === "credit") {
       if (!selectedCustomer) {
         toast.error("Seleccione un cliente para venta a crédito");
+        isProcessingSaleRef.current = false;
         return;
       }
     }
