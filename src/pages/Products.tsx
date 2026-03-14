@@ -794,6 +794,7 @@ const Products = () => {
                                   quantity: 0,
                                   reason: `Stock ${checked ? 'desactivado' : 'activado'} por ${user?.email}`,
                                   performed_by: user?.id,
+                                  empresa_id: empresaId,
                                 });
                                 
                                 toast.success(`Stock ${checked ? 'desactivado' : 'activado'}`);
