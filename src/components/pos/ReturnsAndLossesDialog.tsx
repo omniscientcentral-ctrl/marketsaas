@@ -223,6 +223,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
           notes: `${returnType === "merma" ? "Merma" : "Devolución"}: ${reason}`,
           performed_by: user.id,
           reason: RETURN_TYPE_MAP[returnType],
+          empresa_id: empresaId,
         });
 
       if (movementError) throw movementError;
