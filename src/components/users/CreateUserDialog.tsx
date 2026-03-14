@@ -18,7 +18,7 @@ interface CreateUserDialogProps {
 
 const AVAILABLE_ROLES = ["admin", "supervisor", "cajero", "repositor"];
 
-export const CreateUserDialog = ({ open, onOpenChange, onUserCreated }: CreateUserDialogProps) => {
+export const CreateUserDialog = ({ open, onOpenChange, onUserCreated, empresaId }: CreateUserDialogProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
