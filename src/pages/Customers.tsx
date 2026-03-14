@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { SaleDetailDialog } from "@/components/sales/SaleDetailDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
