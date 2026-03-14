@@ -15,6 +15,7 @@ import { CashClosureStep5 } from "@/components/cash-closure/CashClosureStep5";
 import { CashOpenStep } from "@/components/cash-closure/CashOpenStep";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getHomePathForRole } from "@/config/navigation";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export default function CashClosure() {
   const { user, activeRole, loading: authLoading } = useAuth();
@@ -36,6 +37,7 @@ export default function CashClosure() {
   const [printType, setPrintType] = useState<"a4" | "tickeadora" | "no_imprimir">("no_imprimir");
   const [approvalThreshold, setApprovalThreshold] = useState<number>(50);
   const { notifyCashClosureWithDifference, notifyCashOpening, notifyCashClosureZ } = useNotifications();
+  const empresaId = useEmpresaId();
 
   useEffect(() => {
     // Esperar a que termine la carga de autenticación
@@ -345,6 +347,7 @@ export default function CashClosure() {
           opening_amount: openingAmount,
           status: "open",
           opened_at: new Date().toISOString(),
+          empresa_id: empresaId,
         })
         .select()
         .single();

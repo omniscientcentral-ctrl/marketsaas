@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Wallet, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface CashOpenStepProps {
   openingAmount: number;
@@ -31,6 +32,7 @@ export function CashOpenStep({
 }: CashOpenStepProps) {
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
+  const empresaId = useEmpresaId();
 
   useEffect(() => {
     loadCashRegisters();
@@ -40,7 +42,7 @@ export function CashOpenStep({
     try {
       // Mostrar solo cajas activas y disponibles (sin sesión abierta)
       const { data, error } = await supabase
-        .rpc('get_cash_registers_status');
+        .rpc('get_cash_registers_status', { p_empresa_id: empresaId });
 
       if (error) throw error;
       // Filtrar cajas sin sesión abierta (current_session_id es null)

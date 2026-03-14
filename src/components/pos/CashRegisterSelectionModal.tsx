@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export default function CashRegisterSelectionModal({
   canClose = false,
   onOpenChange,
 }: CashRegisterSelectionModalProps) {
+  const empresaId = useEmpresaId();
   const [loading, setLoading] = useState(false);
   const [mySessions, setMySessions] = useState<CashSession[]>([]);
   const [otherSessions, setOtherSessions] = useState<CashSession[]>([]);
@@ -81,7 +83,7 @@ export default function CashRegisterSelectionModal({
 
       // Usar la función get_cash_registers_status que muestra todas las cajas con su estado
       const { data: registers, error: registersError } = await supabase
-        .rpc('get_cash_registers_status');
+        .rpc('get_cash_registers_status', { p_empresa_id: empresaId });
       
       console.log('[CashRegisterModal] Registers status:', { registers, registersError });
 
@@ -252,6 +254,7 @@ export default function CashRegisterSelectionModal({
           opening_amount: openingAmount,
           status: "open",
           opened_at: new Date().toISOString(),
+          empresa_id: empresaId,
         })
         .select(`
           id,

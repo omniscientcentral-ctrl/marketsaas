@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface CashRegister {
 
 const CashRegistersTab = () => {
   const { user } = useAuth();
+  const empresaId = useEmpresaId();
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -36,10 +38,16 @@ const CashRegistersTab = () => {
 
   const loadCashRegisters = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('cash_registers')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (empresaId) {
+        query = query.eq('empresa_id', empresaId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         if (error.code === 'PGRST301' || error.message.includes('permission')) {
