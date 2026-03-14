@@ -1247,6 +1247,7 @@ const POS = () => {
         .from("sales")
         .insert({
           cashier_id: user?.id,
+          empresa_id: empresaId,
           customer_id: customer.id,
           customer_name: `${customer.name} ${customer.last_name || ""}`.trim(),
           total,
@@ -1262,6 +1263,7 @@ const POS = () => {
       if (saleError) throw saleError;
       const saleItems = cart.map((item) => ({
         sale_id: sale.id,
+        empresa_id: empresaId,
         product_id: item.product.id.startsWith("generic-") ? null : item.product.id,
         product_name: item.product.name,
         quantity: item.quantity,
@@ -1281,6 +1283,7 @@ const POS = () => {
           // Registrar movimiento de stock (historial)
           await supabase.from("stock_movements").insert({
             product_id: item.product.id,
+            empresa_id: empresaId,
             movement_type: "sale",
             quantity: item.quantity,
             previous_stock: previousStock,
@@ -1319,6 +1322,7 @@ const POS = () => {
       // Create credit record
       const { error: creditError } = await supabase.from("credits").insert({
         sale_id: sale.id,
+        empresa_id: empresaId,
         customer_id: customer.id,
         customer_name: `${customer.name} ${customer.last_name || ""}`.trim(),
         customer_phone: customer.phone,
@@ -1378,6 +1382,7 @@ const POS = () => {
         .from("sales")
         .insert({
           cashier_id: user?.id,
+          empresa_id: empresaId,
           customer_id: selectedCustomer?.id || null,
           customer_name: selectedCustomer?.name || null,
           total,
@@ -1392,6 +1397,7 @@ const POS = () => {
       if (saleError) throw saleError;
       const saleItems = cart.map((item) => ({
         sale_id: sale.id,
+        empresa_id: empresaId,
         product_id: item.product.id.startsWith("generic-") ? null : item.product.id,
         product_name: item.product.name,
         quantity: item.quantity,
@@ -1411,6 +1417,7 @@ const POS = () => {
           // Registrar movimiento de stock (historial)
           await supabase.from("stock_movements").insert({
             product_id: item.product.id,
+            empresa_id: empresaId,
             movement_type: "sale",
             quantity: item.quantity,
             previous_stock: previousStock,
@@ -1449,6 +1456,7 @@ const POS = () => {
         // Create credit record
         const { error: creditError } = await supabase.from("credits").insert({
           sale_id: sale.id,
+          empresa_id: empresaId,
           customer_id: selectedCustomer.id,
           customer_name: selectedCustomer.name,
           customer_phone: selectedCustomer.phone,

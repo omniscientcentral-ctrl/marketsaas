@@ -1,29 +1,39 @@
 
 
-## Plan: Fix RLS violation when completing sales in POS
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Root cause
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-Same pattern as previous fixes. In `src/pages/POS.tsx`, both `completeSale` (line 1379) and `completeSaleForCustomer` (line 1248) insert into the `sales` table without `empresa_id`. The column defaults to "Empresa Inicial", causing RLS violations for other companies.
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-Additionally, several related inserts in both functions are also missing `empresa_id`:
-- `sale_items` inserts (lines 1401, 1271)
-- `stock_movements` inserts (lines 1412, 1282)
-- `credits` inserts (lines 1450, 1320)
+### Cambios en `src/pages/Customers.tsx`
 
-### Fix
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-**File: `src/pages/POS.tsx`** — The `empresaId` hook is already imported from a previous fix. Add `empresa_id: empresaId` to these 6 insert operations:
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-1. **`completeSale`** (line 1379): Add `empresa_id: empresaId` to `sales` insert
-2. **`completeSale`** (line 1393): Add `empresa_id: empresaId` to each `sale_items` object
-3. **`completeSale`** (line 1412): Add `empresa_id: empresaId` to `stock_movements` insert
-4. **`completeSale`** (line 1450): Add `empresa_id: empresaId` to `credits` insert
-5. **`completeSaleForCustomer`** (line 1248): Add `empresa_id: empresaId` to `sales` insert
-6. **`completeSaleForCustomer`** (line 1263): Add `empresa_id: empresaId` to each `sale_items` object
-7. **`completeSaleForCustomer`** (line 1282): Add `empresa_id: empresaId` to `stock_movements` insert
-8. **`completeSaleForCustomer`** (line 1320): Add `empresa_id: empresaId` to `credits` insert
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
-### Files to modify
-1. `src/pages/POS.tsx` — add `empresa_id: empresaId` to 8 insert operations across both sale functions
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 
