@@ -282,6 +282,14 @@ const Empresas = () => {
         loading={createMutation.isPending}
       />
 
+      <EmpresaDialog
+        open={!!editingEmpresa}
+        onOpenChange={(open) => { if (!open) setEditingEmpresa(null); }}
+        onSave={(data) => editingEmpresa && updateMutation.mutate({ id: editingEmpresa.id, data })}
+        initialData={editingEmpresa?.data}
+        loading={updateMutation.isPending}
+      />
+
       {selectedEmpresa && (
         <AssignAdminDialog
           open={assignAdminOpen}
