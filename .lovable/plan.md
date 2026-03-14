@@ -1,39 +1,18 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Plan: Fix `create_customer_with_initial_debt` to include `empresa_id`
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### Root cause
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+The SECURITY DEFINER function `create_customer_with_initial_debt` inserts into 3 tables (`customers`, `sales`, `credits`) without specifying `empresa_id`. All rows default to the "Empresa Inicial" UUID, making them invisible to users of other companies.
 
-### Cambios en `src/pages/Customers.tsx`
+### Fix
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+1. **Database migration** — Update the function to accept a new `p_empresa_id uuid` parameter and include it in all 3 INSERT statements (customers, sales, credits).
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+2. **`src/pages/Customers.tsx`** — Pass `empresaId` from the `useEmpresaId()` hook as the `p_empresa_id` argument when calling the RPC function.
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
-
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
-
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
-
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+### Files to modify
+1. Database migration (new SQL file)
+2. `src/pages/Customers.tsx` — add `p_empresa_id: empresaId` to the RPC call (~line 315)
 
