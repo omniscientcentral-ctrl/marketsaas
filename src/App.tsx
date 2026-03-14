@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { EmpresaProvider } from "./contexts/EmpresaContext";
+import { GlobalModeGuard } from "./components/GlobalModeGuard";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -30,16 +31,18 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth" element={<Auth />} />
+            {/* Read-only pages: accessible in global mode */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/pos" element={<POS />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/customers" element={<Customers />} />
             <Route path="/sales" element={<Sales />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/cash-closure" element={<CashClosure />} />
             <Route path="/cash-closure-history" element={<CashClosureHistory />} />
-            <Route path="/admin/gastos" element={<ExpensesManagement />} />
             <Route path="/empresas" element={<Empresas />} />
+            {/* Write-capable pages: blocked in global mode */}
+            <Route path="/pos" element={<GlobalModeGuard><POS /></GlobalModeGuard>} />
+            <Route path="/products" element={<GlobalModeGuard><Products /></GlobalModeGuard>} />
+            <Route path="/customers" element={<GlobalModeGuard><Customers /></GlobalModeGuard>} />
+            <Route path="/settings" element={<GlobalModeGuard><Settings /></GlobalModeGuard>} />
+            <Route path="/cash-closure" element={<GlobalModeGuard><CashClosure /></GlobalModeGuard>} />
+            <Route path="/admin/gastos" element={<GlobalModeGuard><ExpensesManagement /></GlobalModeGuard>} />
             {/* Redirects for old routes */}
             <Route path="/users" element={<Navigate to="/settings?tab=usuarios" replace />} />
             <Route path="/admin/cajas" element={<Navigate to="/settings?tab=cajas" replace />} />
