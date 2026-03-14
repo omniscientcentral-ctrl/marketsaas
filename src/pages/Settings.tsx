@@ -48,7 +48,7 @@ const Settings = () => {
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && ["empresa", "usuarios", "cajas", "sistema"].includes(tabParam)) {
-      if ((tabParam === "cajas" || tabParam === "sistema") && !isSupportUser) {
+      if (tabParam === "sistema" && !isSupportUser) {
         const defaultTab = activeRole === "admin" ? "empresa" : "usuarios";
         setActiveTab(defaultTab);
         setSearchParams({ tab: defaultTab });
