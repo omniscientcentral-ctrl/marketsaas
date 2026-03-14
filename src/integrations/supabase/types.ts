@@ -1860,21 +1860,37 @@ export type Database = {
       }
       get_admin_and_supervisor_user_ids: { Args: never; Returns: string[] }
       get_admin_user_ids: { Args: never; Returns: string[] }
-      get_cash_registers_status: {
-        Args: never
-        Returns: {
-          cash_register_id: string
-          cash_register_name: string
-          cashier_id: string
-          cashier_name: string
-          current_session_id: string
-          is_active: boolean
-          location: string
-          opened_at: string
-          opening_amount: number
-          status: string
-        }[]
-      }
+      get_cash_registers_status:
+        | {
+            Args: never
+            Returns: {
+              cash_register_id: string
+              cash_register_name: string
+              cashier_id: string
+              cashier_name: string
+              current_session_id: string
+              is_active: boolean
+              location: string
+              opened_at: string
+              opening_amount: number
+              status: string
+            }[]
+          }
+        | {
+            Args: { p_empresa_id?: string }
+            Returns: {
+              cash_register_id: string
+              cash_register_name: string
+              cashier_id: string
+              cashier_name: string
+              current_session_id: string
+              is_active: boolean
+              location: string
+              opened_at: string
+              opening_amount: number
+              status: string
+            }[]
+          }
       get_user_empresa_id: { Args: { _user_id: string }; Returns: string }
       has_any_role: {
         Args: {
