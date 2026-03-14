@@ -404,6 +404,7 @@ const UsersTab = () => {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onUserCreated={fetchUsers}
+        empresaId={empresaId}
       />
 
       <UserAuditDialog

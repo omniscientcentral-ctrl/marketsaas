@@ -432,6 +432,7 @@ const Users = () => {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onUserCreated={fetchUsers}
+        empresaId={empresaId}
       />
 
       <UserAuditDialog
