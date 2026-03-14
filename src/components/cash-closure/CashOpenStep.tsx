@@ -32,6 +32,7 @@ export function CashOpenStep({
 }: CashOpenStepProps) {
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
+  const empresaId = useEmpresaId();
 
   useEffect(() => {
     loadCashRegisters();
