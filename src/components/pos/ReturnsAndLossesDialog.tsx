@@ -259,6 +259,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
             amount: refundAmt,
             category: "devolucion",
             created_by: user.id,
+            empresa_id: empresaId,
           });
 
         if (expenseError) console.error("Error registrando egreso:", expenseError);
