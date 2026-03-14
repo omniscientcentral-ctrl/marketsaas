@@ -204,6 +204,7 @@ const DebtPaymentModal = ({ open, onClose, customer, onPaymentComplete, mode = "
             payment_method: paymentMethod,
             received_by: user.id,
             payment_group_id: paymentGroupId,
+            empresa_id: empresaId,
           } as any);
 
         if (paymentError) throw paymentError;
