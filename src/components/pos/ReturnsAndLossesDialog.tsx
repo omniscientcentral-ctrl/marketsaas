@@ -178,6 +178,7 @@ export function ReturnsAndLossesDialog({ open, onOpenChange, cashRegisterSession
           performed_by: user.id,
           authorized_by: supervisorId,
           cash_register_session_id: cashRegisterSessionId || null,
+          empresa_id: empresaId,
         })
         .select()
         .single();
