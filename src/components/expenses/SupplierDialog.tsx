@@ -65,7 +65,7 @@ const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogPr
 
     setLoading(true);
 
-    const supplierData: Record<string, any> = {
+    const baseData = {
       name: name.trim(),
       tax_id: taxId.trim() || null,
       phone: phone.trim() || null,
@@ -74,9 +74,6 @@ const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogPr
       is_active: isActive,
     };
 
-    if (!supplier && empresaId) {
-      supplierData.empresa_id = empresaId;
-    }
 
     if (supplier) {
       // Update
