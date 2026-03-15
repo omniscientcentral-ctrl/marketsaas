@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import SuppliersTable from "./SuppliersTable";
 import SupplierDialog from "./SupplierDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export interface Supplier {
   id: string;
