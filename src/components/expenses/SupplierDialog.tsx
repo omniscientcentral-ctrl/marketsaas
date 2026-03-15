@@ -22,7 +22,7 @@ interface SupplierDialogProps {
   empresaId?: string | null;
 }
 
-const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
+const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogProps) => {
   const [loading, setLoading] = useState(false);
 
   // Form state
