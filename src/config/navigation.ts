@@ -70,6 +70,13 @@ export const navigationItems: NavigationItem[] = [
   mobileLabel: "Config",
 },
 {
+  icon: CreditCard,
+  label: "Planes",
+  path: "/planes",
+  roles: ["super_admin"],
+  mobileLabel: "Planes",
+},
+{
   icon: Building2,
   label: "Empresas",
   path: "/empresas",

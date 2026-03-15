@@ -37,6 +37,7 @@ const App = () => (
             <Route path="/sales" element={<Sales />} />
             <Route path="/cash-closure-history" element={<CashClosureHistory />} />
             <Route path="/empresas" element={<Empresas />} />
+            <Route path="/planes" element={<Planes />} />
             {/* Write-capable pages: blocked in global mode */}
             <Route path="/pos" element={<GlobalModeGuard><POS /></GlobalModeGuard>} />
             <Route path="/products" element={<GlobalModeGuard><Products /></GlobalModeGuard>} />
