@@ -76,7 +76,7 @@ const SuppliersTab = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [empresaId]);
 
   const filteredSuppliers = suppliers.filter(s => {
     const search = searchTerm.toLowerCase();
