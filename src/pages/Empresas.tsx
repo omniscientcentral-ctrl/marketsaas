@@ -25,7 +25,7 @@ const Empresas = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("*")
+        .select("*, planes:plan(id, nombre)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
