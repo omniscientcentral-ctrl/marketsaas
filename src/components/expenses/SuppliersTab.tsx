@@ -31,10 +31,16 @@ const SuppliersTab = () => {
     setLoading(true);
     
     // Get suppliers
-    const { data: suppliersData, error: suppliersError } = await supabase
+    let suppliersQuery = supabase
       .from("suppliers")
       .select("*")
       .order("name");
+
+    if (empresaId) {
+      suppliersQuery = suppliersQuery.eq("empresa_id", empresaId);
+    }
+
+    const { data: suppliersData, error: suppliersError } = await suppliersQuery;
 
     if (suppliersError) {
       console.error("Error fetching suppliers:", suppliersError);
