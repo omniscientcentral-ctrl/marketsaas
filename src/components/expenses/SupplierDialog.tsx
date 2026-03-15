@@ -79,7 +79,7 @@ const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogPr
       // Update
       const { error } = await supabase
         .from("suppliers")
-        .update(supplierData)
+        .update(baseData)
         .eq("id", supplier.id);
 
       if (error) {
@@ -91,7 +91,8 @@ const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogPr
       toast.success("Proveedor actualizado");
     } else {
       // Create
-      const { error } = await supabase.from("suppliers").insert([supplierData]);
+      const insertData = empresaId ? { ...baseData, empresa_id: empresaId } : baseData;
+      const { error } = await supabase.from("suppliers").insert([insertData]);
 
       if (error) {
         console.error("Error creating supplier:", error);
