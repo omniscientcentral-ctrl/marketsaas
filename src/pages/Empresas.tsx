@@ -71,7 +71,7 @@ const Empresas = () => {
           rubro: data.rubro || null,
           email: data.email || null,
           telefono: data.telefono || null,
-          plan: data.plan || "basic",
+          plan: data.plan || null,
           subdominio: data.subdominio || null,
         })
         .select()
