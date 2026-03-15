@@ -217,7 +217,7 @@ const Empresas = () => {
                           </TableCell>
                           <TableCell>{e.rubro || "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize">{e.plan || "basic"}</Badge>
+                            <Badge variant="outline">{(e as any).planes?.nombre || "Sin plan"}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={e.estado === "activa" ? "default" : "destructive"}>
