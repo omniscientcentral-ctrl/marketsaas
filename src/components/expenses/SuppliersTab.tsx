@@ -161,6 +161,7 @@ const SuppliersTab = () => {
         open={dialogOpen}
         onClose={handleDialogClose}
         supplier={selectedSupplier}
+        empresaId={empresaId}
       />
     </div>
   );

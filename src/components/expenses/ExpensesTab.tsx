@@ -132,11 +132,11 @@ const ExpensesTab = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [empresaId]);
 
   useEffect(() => {
     fetchExpenses();
-  }, [dateFrom, dateTo, selectedSupplier, selectedStatus, selectedMethod]);
+  }, [dateFrom, dateTo, selectedSupplier, selectedStatus, selectedMethod, empresaId]);
 
   const handleCreate = () => {
     setSelectedExpense(null);
