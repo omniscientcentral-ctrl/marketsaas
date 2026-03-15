@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import ExpenseFilters from "./ExpenseFilters";
 import ExpensesTable from "./ExpensesTable";
 import ExpenseDialog from "./ExpenseDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export interface Expense {
   id: string;
