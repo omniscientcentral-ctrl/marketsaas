@@ -213,11 +213,13 @@ const POS = () => {
   // Cargar proveedores para el dialog de gastos
   useEffect(() => {
     const fetchSuppliers = async () => {
-      const { data } = await supabase.from("suppliers").select("*").eq("is_active", true).order("name");
+      let query = supabase.from("suppliers").select("*").eq("is_active", true);
+      if (empresaId) query = query.eq("empresa_id", empresaId);
+      const { data } = await query.order("name");
       if (data) setSuppliers(data as Supplier[]);
     };
     if (user) fetchSuppliers();
-  }, [user]);
+  }, [user, empresaId]);
 
   // Detectar datos de "Rehacer venta" en sessionStorage
   useEffect(() => {

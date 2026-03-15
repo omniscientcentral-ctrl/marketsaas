@@ -444,12 +444,13 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
       onClose={async (refresh) => {
         setShowSupplierDialog(false);
         if (refresh) {
-          const { data } = await supabase
+          let query = supabase
             .from("suppliers")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
+            .limit(1);
+          if (empresaId) query = query.eq("empresa_id", empresaId);
+          const { data } = await query.single();
           if (data) {
             setLocalSuppliers((prev) => [...prev, data as Supplier]);
             setSupplierId(data.id);
@@ -457,6 +458,7 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
         }
       }}
       supplier={null}
+      empresaId={empresaId}
     />
     </>
   );
