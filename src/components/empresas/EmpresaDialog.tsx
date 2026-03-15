@@ -37,7 +37,7 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
     rubro: "",
     email: "",
     telefono: "",
-    plan: "basic",
+    plan: "",
     subdominio: "",
     adminName: "",
     adminEmail: "",
@@ -47,13 +47,29 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
 
   const isCreating = !initialData;
 
+  const { data: planes = [] } = useQuery({
+    queryKey: ["planes-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("planes")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const selectedPlan = planes.find((p: any) => p.id === form.plan);
+
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({ ...prev, ...initialData }));
     } else {
-      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: "basic", subdominio: "", adminName: "", adminEmail: "", adminPassword: "", adminPhone: "" });
+      const defaultPlan = planes.length > 0 ? planes[0].id : "";
+      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: defaultPlan, subdominio: "", adminName: "", adminEmail: "", adminPassword: "", adminPhone: "" });
     }
-  }, [initialData, open]);
+  }, [initialData, open, planes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
