@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ interface ExpenseDialogProps {
 
 const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps) => {
   const { user } = useAuth();
+  const empresaId = useEmpresaId();
   const [loading, setLoading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
@@ -442,12 +444,13 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
       onClose={async (refresh) => {
         setShowSupplierDialog(false);
         if (refresh) {
-          const { data } = await supabase
+          let query = supabase
             .from("suppliers")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
+            .limit(1);
+          if (empresaId) query = query.eq("empresa_id", empresaId);
+          const { data } = await query.single();
           if (data) {
             setLocalSuppliers((prev) => [...prev, data as Supplier]);
             setSupplierId(data.id);
@@ -455,6 +458,7 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
         }
       }}
       supplier={null}
+      empresaId={empresaId}
     />
     </>
   );
