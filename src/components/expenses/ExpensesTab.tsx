@@ -58,11 +58,17 @@ const ExpensesTab = () => {
   const [totalPending, setTotalPending] = useState(0);
 
   const fetchSuppliers = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("suppliers")
       .select("*")
       .eq("is_active", true)
       .order("name");
+
+    if (empresaId) {
+      query = query.eq("empresa_id", empresaId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching suppliers:", error);
