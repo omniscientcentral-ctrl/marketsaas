@@ -94,7 +94,7 @@ const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogPr
       toast.success("Proveedor actualizado");
     } else {
       // Create
-      const { error } = await supabase.from("suppliers").insert(supplierData);
+      const { error } = await supabase.from("suppliers").insert([supplierData]);
 
       if (error) {
         console.error("Error creating supplier:", error);

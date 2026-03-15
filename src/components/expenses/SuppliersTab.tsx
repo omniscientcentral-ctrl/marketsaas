@@ -21,6 +21,7 @@ export interface Supplier {
 }
 
 const SuppliersTab = () => {
+  const empresaId = useEmpresaId();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
