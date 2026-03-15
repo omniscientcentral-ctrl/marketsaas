@@ -7,6 +7,7 @@ import {
   Wallet,
   Settings,
   Building2,
+  CreditCard,
   LucideIcon,
 } from "lucide-react";
 
