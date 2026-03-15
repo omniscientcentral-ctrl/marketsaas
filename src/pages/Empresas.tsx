@@ -239,7 +239,7 @@ const Empresas = () => {
                                   rubro: e.rubro || "",
                                   email: e.email || "",
                                   telefono: e.telefono || "",
-                                  plan: e.plan || "basic",
+                                  plan: e.plan || "",
                                   subdominio: e.subdominio || "",
                                 },
                               })}
