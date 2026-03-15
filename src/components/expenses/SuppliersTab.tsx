@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import SuppliersTable from "./SuppliersTable";
 import SupplierDialog from "./SupplierDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export interface Supplier {
   id: string;
@@ -20,6 +21,7 @@ export interface Supplier {
 }
 
 const SuppliersTab = () => {
+  const empresaId = useEmpresaId();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,10 +32,16 @@ const SuppliersTab = () => {
     setLoading(true);
     
     // Get suppliers
-    const { data: suppliersData, error: suppliersError } = await supabase
+    let suppliersQuery = supabase
       .from("suppliers")
       .select("*")
       .order("name");
+
+    if (empresaId) {
+      suppliersQuery = suppliersQuery.eq("empresa_id", empresaId);
+    }
+
+    const { data: suppliersData, error: suppliersError } = await suppliersQuery;
 
     if (suppliersError) {
       console.error("Error fetching suppliers:", suppliersError);
@@ -69,7 +77,7 @@ const SuppliersTab = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [empresaId]);
 
   const filteredSuppliers = suppliers.filter(s => {
     const search = searchTerm.toLowerCase();
@@ -154,6 +162,7 @@ const SuppliersTab = () => {
         open={dialogOpen}
         onClose={handleDialogClose}
         supplier={selectedSupplier}
+        empresaId={empresaId}
       />
     </div>
   );

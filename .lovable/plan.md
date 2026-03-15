@@ -1,34 +1,39 @@
 
 
-## Plan: Fix tenant isolation in Suppliers and Expenses
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Problem
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-The `suppliers` table has `empresa_id` but:
-1. **Insert** (`SupplierDialog.tsx`): No `empresa_id` is sent when creating a supplier, so it defaults to the hardcoded initial empresa UUID
-2. **Select** (`SuppliersTab.tsx`): No `.eq("empresa_id", empresaId)` filter, so all suppliers from all companies are shown
-3. **ExpensesTab.tsx**: Same issue -- suppliers and expenses fetched without `empresa_id` filter
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-### Changes
+### Cambios en `src/pages/Customers.tsx`
 
-#### 1. `src/components/expenses/SupplierDialog.tsx`
-- Accept `empresaId` prop
-- Include `empresa_id: empresaId` in the `supplierData` object on insert
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-#### 2. `src/components/expenses/SuppliersTab.tsx`
-- Import `useEmpresaId`
-- Filter `fetchSuppliers` query with `.eq("empresa_id", empresaId)`
-- Filter expenses count query with `.eq("empresa_id", empresaId)` (already scoped by supplier, but good practice)
-- Add `empresaId` to `useEffect` dependency
-- Pass `empresaId` to `SupplierDialog`
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-#### 3. `src/components/expenses/ExpensesTab.tsx`
-- Import `useEmpresaId`
-- Filter `fetchSuppliers` and `fetchExpenses` queries by `empresa_id`
-- Add `empresaId` to `useEffect` dependencies
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
-### Files to modify
-- `src/components/expenses/SupplierDialog.tsx`
-- `src/components/expenses/SuppliersTab.tsx`
-- `src/components/expenses/ExpensesTab.tsx`
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 

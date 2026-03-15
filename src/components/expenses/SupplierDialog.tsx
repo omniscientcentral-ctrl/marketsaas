@@ -19,9 +19,10 @@ interface SupplierDialogProps {
   open: boolean;
   onClose: (refresh?: boolean) => void;
   supplier: Supplier | null;
+  empresaId?: string | null;
 }
 
-const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
+const SupplierDialog = ({ open, onClose, supplier, empresaId }: SupplierDialogProps) => {
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -64,7 +65,7 @@ const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
 
     setLoading(true);
 
-    const supplierData = {
+    const baseData = {
       name: name.trim(),
       tax_id: taxId.trim() || null,
       phone: phone.trim() || null,
@@ -73,11 +74,12 @@ const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
       is_active: isActive,
     };
 
+
     if (supplier) {
       // Update
       const { error } = await supabase
         .from("suppliers")
-        .update(supplierData)
+        .update(baseData)
         .eq("id", supplier.id);
 
       if (error) {
@@ -89,7 +91,8 @@ const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
       toast.success("Proveedor actualizado");
     } else {
       // Create
-      const { error } = await supabase.from("suppliers").insert(supplierData);
+      const insertData = empresaId ? { ...baseData, empresa_id: empresaId } : baseData;
+      const { error } = await supabase.from("suppliers").insert([insertData]);
 
       if (error) {
         console.error("Error creating supplier:", error);

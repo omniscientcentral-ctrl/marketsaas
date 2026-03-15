@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import ExpenseFilters from "./ExpenseFilters";
 import ExpensesTable from "./ExpensesTable";
 import ExpenseDialog from "./ExpenseDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export interface Expense {
   id: string;
@@ -38,6 +39,7 @@ export interface Supplier {
 }
 
 const ExpensesTab = () => {
+  const empresaId = useEmpresaId();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +58,17 @@ const ExpensesTab = () => {
   const [totalPending, setTotalPending] = useState(0);
 
   const fetchSuppliers = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("suppliers")
       .select("*")
       .eq("is_active", true)
       .order("name");
+
+    if (empresaId) {
+      query = query.eq("empresa_id", empresaId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching suppliers:", error);
@@ -124,11 +132,11 @@ const ExpensesTab = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [empresaId]);
 
   useEffect(() => {
     fetchExpenses();
-  }, [dateFrom, dateTo, selectedSupplier, selectedStatus, selectedMethod]);
+  }, [dateFrom, dateTo, selectedSupplier, selectedStatus, selectedMethod, empresaId]);
 
   const handleCreate = () => {
     setSelectedExpense(null);
