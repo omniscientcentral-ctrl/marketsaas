@@ -39,6 +39,7 @@ export interface Supplier {
 }
 
 const ExpensesTab = () => {
+  const empresaId = useEmpresaId();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
