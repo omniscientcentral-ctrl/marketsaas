@@ -1,49 +1,39 @@
 
 
-## Plan: Fix suppliers RLS policies missing `empresa_id` filtering
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Root Cause
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-The `suppliers` table has an old RLS policy **"Admin can manage suppliers"** that grants `FOR ALL` access with only `has_role(auth.uid(), 'admin')` — no `empresa_id` check. Since RLS policies are **permissive** (OR logic), this policy lets any admin see ALL suppliers across all companies, overriding the correctly filtered "Authenticated users can view suppliers" policy.
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-Same issue with "Supervisor can insert/update suppliers" — no tenant isolation.
+### Cambios en `src/pages/Customers.tsx`
 
-### Fix (1 database migration)
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-Drop the 3 old policies and recreate them with `empresa_id` filtering:
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-```sql
--- Drop old unscoped policies
-DROP POLICY IF EXISTS "Admin can manage suppliers" ON public.suppliers;
-DROP POLICY IF EXISTS "Supervisor can insert suppliers" ON public.suppliers;
-DROP POLICY IF EXISTS "Supervisor can update suppliers" ON public.suppliers;
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
--- Recreate with empresa_id isolation
-CREATE POLICY "Admin can manage suppliers" ON public.suppliers FOR ALL
-USING (
-  (empresa_id = get_user_empresa_id(auth.uid()) AND has_role(auth.uid(), 'admin'::app_role))
-  OR has_role(auth.uid(), 'super_admin'::app_role)
-)
-WITH CHECK (
-  (empresa_id = get_user_empresa_id(auth.uid()) AND has_role(auth.uid(), 'admin'::app_role))
-  OR has_role(auth.uid(), 'super_admin'::app_role)
-);
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
 
-CREATE POLICY "Supervisor can insert suppliers" ON public.suppliers FOR INSERT
-WITH CHECK (
-  (empresa_id = get_user_empresa_id(auth.uid()) AND has_any_role(auth.uid(), ARRAY['admin'::app_role, 'supervisor'::app_role]))
-  OR has_role(auth.uid(), 'super_admin'::app_role)
-);
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
 
-CREATE POLICY "Supervisor can update suppliers" ON public.suppliers FOR UPDATE
-USING (
-  (empresa_id = get_user_empresa_id(auth.uid()) AND has_any_role(auth.uid(), ARRAY['admin'::app_role, 'supervisor'::app_role]))
-  OR has_role(auth.uid(), 'super_admin'::app_role)
-);
-```
-
-No frontend code changes needed — the existing `empresa_id` filter in POS.tsx is a good defense-in-depth measure, but the real fix is at the RLS level.
-
-### Files to modify
-- 1 new database migration (RLS policy update)
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 
