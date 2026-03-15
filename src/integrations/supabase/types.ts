@@ -685,7 +685,15 @@ export type Database = {
           telefono?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_plan_fkey"
+            columns: ["plan"]
+            isOneToOne: false
+            referencedRelation: "planes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -974,6 +982,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      planes: {
+        Row: {
+          ai_asistente: boolean
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          is_active: boolean
+          max_cajas: number
+          max_productos: number
+          max_sucursales: number
+          max_usuarios: number
+          nombre: string
+          updated_at: string | null
+          whatsapp_respuestas: boolean
+        }
+        Insert: {
+          ai_asistente?: boolean
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          is_active?: boolean
+          max_cajas?: number
+          max_productos?: number
+          max_sucursales?: number
+          max_usuarios?: number
+          nombre: string
+          updated_at?: string | null
+          whatsapp_respuestas?: boolean
+        }
+        Update: {
+          ai_asistente?: boolean
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          is_active?: boolean
+          max_cajas?: number
+          max_productos?: number
+          max_sucursales?: number
+          max_usuarios?: number
+          nombre?: string
+          updated_at?: string | null
+          whatsapp_respuestas?: boolean
+        }
+        Relationships: []
       }
       price_override_logs: {
         Row: {

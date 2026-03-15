@@ -25,7 +25,7 @@ const Empresas = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("*")
+        .select("*, planes:plan(id, nombre)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -71,7 +71,7 @@ const Empresas = () => {
           rubro: data.rubro || null,
           email: data.email || null,
           telefono: data.telefono || null,
-          plan: data.plan || "basic",
+          plan: data.plan || null,
           subdominio: data.subdominio || null,
         })
         .select()
@@ -125,7 +125,7 @@ const Empresas = () => {
           rubro: data.rubro || null,
           email: data.email || null,
           telefono: data.telefono || null,
-          plan: data.plan || "basic",
+          plan: data.plan || null,
           subdominio: data.subdominio || null,
         })
         .eq("id", id);
@@ -217,7 +217,7 @@ const Empresas = () => {
                           </TableCell>
                           <TableCell>{e.rubro || "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize">{e.plan || "basic"}</Badge>
+                            <Badge variant="outline">{(e as any).planes?.nombre || "Sin plan"}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={e.estado === "activa" ? "default" : "destructive"}>
@@ -239,7 +239,7 @@ const Empresas = () => {
                                   rubro: e.rubro || "",
                                   email: e.email || "",
                                   telefono: e.telefono || "",
-                                  plan: e.plan || "basic",
+                                  plan: e.plan || "",
                                   subdominio: e.subdominio || "",
                                 },
                               })}

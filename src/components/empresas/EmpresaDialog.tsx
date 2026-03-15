@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Users, Package, Monitor, Building2, Bot, MessageCircle } from "lucide-react";
 
 export interface EmpresaFormData {
   nombre_empresa: string;
@@ -33,7 +37,7 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
     rubro: "",
     email: "",
     telefono: "",
-    plan: "basic",
+    plan: "",
     subdominio: "",
     adminName: "",
     adminEmail: "",
@@ -43,13 +47,29 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
 
   const isCreating = !initialData;
 
+  const { data: planes = [] } = useQuery({
+    queryKey: ["planes-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("planes")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const selectedPlan = planes.find((p: any) => p.id === form.plan);
+
   useEffect(() => {
     if (initialData) {
       setForm((prev) => ({ ...prev, ...initialData }));
     } else {
-      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: "basic", subdominio: "", adminName: "", adminEmail: "", adminPassword: "", adminPhone: "" });
+      const defaultPlan = planes.length > 0 ? planes[0].id : "";
+      setForm({ nombre_empresa: "", rubro: "", email: "", telefono: "", plan: defaultPlan, subdominio: "", adminName: "", adminEmail: "", adminPassword: "", adminPhone: "" });
     }
-  }, [initialData, open]);
+  }, [initialData, open, planes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,12 +127,12 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
               <Label htmlFor="plan">Plan</Label>
               <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccionar plan" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="basic">Básico</SelectItem>
-                  <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                  {planes.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -125,6 +145,25 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
               />
             </div>
           </div>
+          {selectedPlan && (
+            <div className="rounded-md border p-3 space-y-2 bg-muted/50">
+              <p className="text-xs font-semibold text-muted-foreground">Recursos del plan "{selectedPlan.nombre}"</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {selectedPlan.max_usuarios} usuarios</span>
+                <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {selectedPlan.max_productos.toLocaleString()} productos</span>
+                <span className="flex items-center gap-1"><Monitor className="h-3 w-3" /> {selectedPlan.max_cajas} cajas</span>
+                <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {selectedPlan.max_sucursales} sucursales</span>
+              </div>
+              <div className="flex gap-1.5">
+                <Badge variant={selectedPlan.ai_asistente ? "default" : "secondary"} className="text-[10px] gap-0.5 px-1.5 py-0">
+                  <Bot className="h-2.5 w-2.5" /> IA
+                </Badge>
+                <Badge variant={selectedPlan.whatsapp_respuestas ? "default" : "secondary"} className="text-[10px] gap-0.5 px-1.5 py-0">
+                  <MessageCircle className="h-2.5 w-2.5" /> WA
+                </Badge>
+              </div>
+            </div>
+          )}
 
           {isCreating && (
             <>

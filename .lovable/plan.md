@@ -1,67 +1,39 @@
 
 
-## Plan: Gestor de Planes con Recursos Configurables
+# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
 
-### Concepto
+## Problema
+La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
 
-Reemplazar el campo `plan` (texto libre) en `empresas` por una referencia a una tabla `planes` donde el super_admin define cada plan con sus límites de recursos. Al asignar un plan a una empresa, esta hereda automáticamente los límites configurados.
+## Solución
+Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
 
-### 1. Base de datos (2 migraciones)
+### Cambios en `src/pages/Customers.tsx`
 
-**Tabla `planes`:**
+1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
 
-```text
-planes
-├── id (uuid, PK)
-├── nombre (text, unique, NOT NULL) -- ej: "Básico", "Pro", "Enterprise"
-├── descripcion (text)
-├── max_usuarios (integer, default 5)
-├── max_productos (integer, default 500)
-├── max_cajas (integer, default 2)
-├── max_sucursales (integer, default 1)
-├── ai_asistente (boolean, default false)
-├── whatsapp_respuestas (boolean, default false)
-├── is_active (boolean, default true)
-├── created_at (timestamptz)
-└── updated_at (timestamptz)
-```
+2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
+   ```tsx
+   <DebtPaymentModal
+     open={paymentModalOpen}
+     onClose={() => setPaymentModalOpen(false)}
+     customer={selectedCustomer}
+     onPaymentComplete={() => {
+       fetchCustomers();
+       fetchKPIs();
+     }}
+   />
+   ```
 
-**RLS:** Solo `super_admin` puede CRUD, todos los autenticados pueden leer.
+3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
 
-**Migración en `empresas`:**
-- Cambiar columna `plan` de `text` a `uuid` referenciando `planes.id`
-- Insertar 3 planes iniciales (Básico, Pro, Enterprise) y migrar datos existentes
+4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
 
-### 2. Frontend - Página de Gestión de Planes
+### Ajuste menor en `DebtPaymentModal`
+El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
 
-**Nueva ruta `/planes`** (solo super_admin) con:
-- Listado de planes en cards con los recursos de cada uno
-- Dialogo para crear/editar plan con campos numéricos para cada límite y toggles para features booleanas (IA, WhatsApp)
-- Indicador de cuántas empresas usan cada plan
-
-### 3. Frontend - Selector en EmpresaDialog
-
-- Reemplazar el `<Select>` hardcodeado de 3 opciones por un select dinámico que consulta la tabla `planes`
-- Mostrar un resumen de recursos del plan seleccionado debajo del selector
-
-### 4. Navegación
-
-- Agregar entrada "Planes" en `navigation.ts` (solo `super_admin`, entre Configuración y Empresas)
-
-### Archivos a crear/modificar
-
-| Archivo | Acción |
-|---|---|
-| 1 migración SQL | Crear tabla `planes`, migrar columna en `empresas` |
-| `src/pages/Planes.tsx` | Nueva página CRUD de planes |
-| `src/components/planes/PlanDialog.tsx` | Dialog crear/editar plan |
-| `src/components/planes/PlanCard.tsx` | Card visual de cada plan |
-| `src/components/empresas/EmpresaDialog.tsx` | Select dinámico desde tabla `planes` |
-| `src/config/navigation.ts` | Agregar ruta `/planes` |
-| `src/App.tsx` | Agregar ruta |
-
-### Detalle técnico
-
-- La columna `empresas.plan` pasa de `text` a `uuid REFERENCES planes(id)`. Para migrar sin romper datos, se insertan los 3 planes base primero, luego se hace `UPDATE empresas SET plan = (SELECT id FROM planes WHERE nombre = ...)` según el valor actual.
-- Los límites se validan en el frontend al crear usuarios/productos/cajas, comparando el count actual contra el límite del plan de la empresa.
+### Resultado
+- Misma interfaz visual y funcional en ambas vistas
+- FIFO/manual, historial, comprobante automático
+- Sin duplicación de lógica de pago
 
