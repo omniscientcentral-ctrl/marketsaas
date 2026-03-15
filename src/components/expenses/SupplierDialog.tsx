@@ -19,6 +19,7 @@ interface SupplierDialogProps {
   open: boolean;
   onClose: (refresh?: boolean) => void;
   supplier: Supplier | null;
+  empresaId?: string | null;
 }
 
 const SupplierDialog = ({ open, onClose, supplier }: SupplierDialogProps) => {
