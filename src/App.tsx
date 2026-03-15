@@ -17,6 +17,7 @@ import CashClosure from "./pages/CashClosure";
 import CashClosureHistory from "./pages/CashClosureHistory";
 import ExpensesManagement from "./pages/ExpensesManagement";
 import Empresas from "./pages/Empresas";
+import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
