@@ -15,6 +15,7 @@ import AssignAdminDialog from "@/components/empresas/AssignAdminDialog";
 import { format } from "date-fns";
 
 const Empresas = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<{ id: string; data: Partial<EmpresaFormData> } | null>(null);
