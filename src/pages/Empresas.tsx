@@ -258,6 +258,14 @@ const Empresas = () => {
                               Asignar Admin
                             </Button>
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/empresas/backup?empresa=${e.id}`)}
+                            >
+                              <Database className="h-3.5 w-3.5 mr-1" />
+                              Respaldos
+                            </Button>
+                            <Button
                               variant={e.estado === "activa" ? "destructive" : "default"}
                               size="sm"
                               onClick={() => toggleEstadoMutation.mutate({ id: e.id, estado: e.estado })}
