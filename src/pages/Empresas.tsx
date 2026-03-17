@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Building2, UserPlus, Pencil, Database } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus, Building2, UserPlus, Pencil } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,6 @@ import AssignAdminDialog from "@/components/empresas/AssignAdminDialog";
 import { format } from "date-fns";
 
 const Empresas = () => {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<{ id: string; data: Partial<EmpresaFormData> } | null>(null);
@@ -256,14 +254,6 @@ const Empresas = () => {
                             >
                               <UserPlus className="h-3.5 w-3.5 mr-1" />
                               Asignar Admin
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/empresas/backup?empresa=${e.id}`)}
-                            >
-                              <Database className="h-3.5 w-3.5 mr-1" />
-                              Respaldos
                             </Button>
                             <Button
                               variant={e.estado === "activa" ? "destructive" : "default"}

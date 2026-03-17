@@ -17,7 +17,6 @@ import CashClosure from "./pages/CashClosure";
 import CashClosureHistory from "./pages/CashClosureHistory";
 import ExpensesManagement from "./pages/ExpensesManagement";
 import Empresas from "./pages/Empresas";
-import EmpresaBackup from "./pages/EmpresaBackup";
 import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
 
@@ -38,7 +37,6 @@ const App = () => (
             <Route path="/sales" element={<Sales />} />
             <Route path="/cash-closure-history" element={<CashClosureHistory />} />
             <Route path="/empresas" element={<Empresas />} />
-            <Route path="/empresas/backup" element={<EmpresaBackup />} />
             <Route path="/planes" element={<Planes />} />
             {/* Write-capable pages: blocked in global mode */}
             <Route path="/pos" element={<GlobalModeGuard><POS /></GlobalModeGuard>} />
