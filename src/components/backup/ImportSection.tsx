@@ -235,10 +235,18 @@ export function ImportSection() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!empresaId && (
-          <p className="text-sm text-destructive">
-            Debes seleccionar una empresa para importar datos.
-          </p>
+        {!empresaId ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Debes seleccionar una empresa desde el selector superior para importar datos.
+            </AlertDescription>
+          </Alert>
+        ) : selectedEmpresa && (
+          <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-md px-3 py-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Empresa destino:</span>
+            <Badge variant="secondary">{selectedEmpresa.nombre_empresa}</Badge>
+          </div>
         )}
 
         <div className="space-y-3">
