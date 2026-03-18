@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileUp, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Upload, FileUp, Loader2, CheckCircle2, XCircle, AlertTriangle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useEmpresaContext } from "@/contexts/EmpresaContext";
 import { ColumnPreview } from "./ColumnPreview";
 
 const IMPORT_OPTIONS = [
@@ -56,10 +58,21 @@ const IMPORT_SCHEMAS: Record<string, { name: string; required: boolean; type: st
   ],
 };
 
-function parseCsv(text: string): Record<string, string>[] {
+function detectDelimiter(firstLine: string): string {
+  const semicolons = (firstLine.match(/;/g) || []).length;
+  const commas = (firstLine.match(/,/g) || []).length;
+  return semicolons > commas ? ";" : ",";
+}
+
+function parseCsv(rawText: string): Record<string, string>[] {
+  // Strip BOM
+  const text = rawText.replace(/^\uFEFF/, "");
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+
+  const delimiter = detectDelimiter(lines[0]);
+  const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^"|"$/g, ""));
+
   return lines.slice(1).map((line) => {
     const values: string[] = [];
     let current = "";
@@ -67,7 +80,7 @@ function parseCsv(text: string): Record<string, string>[] {
     for (const char of line) {
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
+      } else if (char === delimiter && !inQuotes) {
         values.push(current.trim());
         current = "";
       } else {
@@ -102,6 +115,7 @@ interface ImportResult {
 
 export function ImportSection() {
   const empresaId = useEmpresaId();
+  const { selectedEmpresa } = useEmpresaContext();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
@@ -221,10 +235,18 @@ export function ImportSection() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!empresaId && (
-          <p className="text-sm text-destructive">
-            Debes seleccionar una empresa para importar datos.
-          </p>
+        {!empresaId ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Debes seleccionar una empresa desde el selector superior para importar datos.
+            </AlertDescription>
+          </Alert>
+        ) : selectedEmpresa && (
+          <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-md px-3 py-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Empresa destino:</span>
+            <Badge variant="secondary">{selectedEmpresa.nombre_empresa}</Badge>
+          </div>
         )}
 
         <div className="space-y-3">

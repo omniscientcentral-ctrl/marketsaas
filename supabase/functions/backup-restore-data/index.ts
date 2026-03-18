@@ -68,7 +68,12 @@ const IMPORT_SCHEMAS: Record<ImportTable, ColumnDef[]> = {
 function parseValue(value: unknown, type: string): unknown {
   if (value === null || value === undefined || value === "") return null;
   if (type === "number") {
-    const n = Number(value);
+    let raw = String(value).trim();
+    // Normalize decimal comma: "0,73" → "0.73" (only if no dot present and single comma)
+    if (!raw.includes(".") && (raw.match(/,/g) || []).length === 1) {
+      raw = raw.replace(",", ".");
+    }
+    const n = Number(raw);
     if (isNaN(n)) throw new Error(`"${value}" no es un número válido`);
     return n;
   }
