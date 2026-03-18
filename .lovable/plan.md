@@ -1,39 +1,49 @@
 
 
-# Reemplazar modal de pago en /customers con DebtPaymentModal del POS
+## Problemas detectados
 
-## Problema
-La página `/customers` tiene un modal de pago simple (solo monto, método y notas) que no coincide con el `DebtPaymentModal` usado en `/pos`, el cual muestra resumen del cliente, lista de créditos pendientes con FIFO/manual, historial de pagos, y genera comprobante automáticamente.
+### 1. El CSV usa punto y coma (`;`) como separador, no coma (`,`)
 
-## Solución
-Reemplazar el modal simple de pago en `src/pages/Customers.tsx` por el componente `DebtPaymentModal` que ya existe en `src/components/pos/DebtPaymentModal.tsx`.
+El archivo tiene esta estructura:
+```
+name;barcode;price
+MIX OCEANICO;201351;0,73
+```
 
-### Cambios en `src/pages/Customers.tsx`
+Pero el parser `parseCsv()` en `ImportSection.tsx` (línea 62) solo reconoce comas como separador. Resultado: las 3 columnas (`name`, `barcode`, `price`) se leen como **una sola columna** llamada `name;barcode;price`, por eso en el mapeo aparece como "Ignorada" y `name` y `price` figuran como no detectadas (X rojo).
 
-1. **Importar** `DebtPaymentModal` desde `@/components/pos/DebtPaymentModal`.
+### 2. Los decimales usan coma (`,`) en lugar de punto (`.`)
 
-2. **Reemplazar** el bloque del Dialog de pago (líneas ~940-985) por:
-   ```tsx
-   <DebtPaymentModal
-     open={paymentModalOpen}
-     onClose={() => setPaymentModalOpen(false)}
-     customer={selectedCustomer}
-     onPaymentComplete={() => {
-       fetchCustomers();
-       fetchKPIs();
-     }}
-   />
-   ```
+Los precios están como `0,73` en vez de `0.73`. Cuando el backend intente convertir a `number`, fallará con `"0,73" no es un número válido`.
 
-3. **Simplificar** `openPaymentModal`: ya no necesita inicializar `paymentData`, solo setear `selectedCustomer` y abrir el modal.
+### 3. BOM UTF-8 (`﻿`) al inicio del archivo
 
-4. **Eliminar** el estado `paymentData` y la función `handleRegisterPayment` que ya no se usan (la lógica completa vive dentro de `DebtPaymentModal`).
+La primera línea tiene un carácter BOM invisible (`\uFEFF`) antes de `name`. Si no se limpia, la primera columna se detecta como `﻿name` en vez de `name`.
 
-### Ajuste menor en `DebtPaymentModal`
-El callback `onPaymentComplete` espera `(remainingBalance, mode)` pero desde `/customers` no necesitamos esos parámetros. El componente ya los pasa, así que en Customers simplemente los ignoramos en el callback.
+---
 
-### Resultado
-- Misma interfaz visual y funcional en ambas vistas
-- FIFO/manual, historial, comprobante automático
-- Sin duplicación de lógica de pago
+### Sobre la selección de empresa destino
+
+El super admin **no tiene un selector explícito de empresa en la página de importación**. El componente usa `useEmpresaId()` (línea 104), que toma la empresa del **selector global** (`EmpresaSelector`) ubicado en el header/sidebar del layout. Es decir, el super admin debe cambiar la empresa desde el selector superior antes de entrar a Respaldos. Si está en modo "Global Empresas", `empresaId` será `null` y se muestra el mensaje "Debes seleccionar una empresa".
+
+---
+
+## Plan de corrección
+
+### Archivos a modificar
+
+| Archivo | Cambio |
+|---|---|
+| `src/components/backup/ImportSection.tsx` | Mejorar `parseCsv()` para auto-detectar separador (`;` vs `,`), limpiar BOM, y reemplazar comas decimales en campos numéricos |
+| `supabase/functions/backup-restore-data/index.ts` | Normalizar comas decimales (`0,73` → `0.73`) en `parseValue()` antes de convertir a number |
+
+### Detalle técnico
+
+1. **Auto-detección de separador**: Leer la primera línea del CSV. Si contiene `;` y no `,` (o más `;` que `,`), usar `;` como delimitador.
+
+2. **Limpieza de BOM**: Hacer `text.replace(/^\uFEFF/, "")` antes de parsear.
+
+3. **Comas decimales**: En `parseValue()` del edge function, para tipo `number`, reemplazar `,` por `.` antes de `Number()` (solo si no hay más de una coma y no hay punto).
+
+4. **Empresa destino**: Agregar un mensaje informativo en la UI que indique claramente qué empresa está seleccionada, o mostrar el nombre de la empresa destino junto al botón de importar para evitar confusión.
 
