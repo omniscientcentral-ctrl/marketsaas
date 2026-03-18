@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileUp, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Upload, FileUp, Loader2, CheckCircle2, XCircle, AlertTriangle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useEmpresaContext } from "@/contexts/EmpresaContext";
 import { ColumnPreview } from "./ColumnPreview";
 
 const IMPORT_OPTIONS = [
