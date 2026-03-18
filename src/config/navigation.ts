@@ -7,6 +7,7 @@ import {
   Wallet,
   Settings,
   Building2,
+  Database,
   LucideIcon,
 } from "lucide-react";
 
