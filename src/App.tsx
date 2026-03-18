@@ -46,6 +46,7 @@ const App = () => (
             <Route path="/settings" element={<GlobalModeGuard><Settings /></GlobalModeGuard>} />
             <Route path="/cash-closure" element={<GlobalModeGuard><CashClosure /></GlobalModeGuard>} />
             <Route path="/admin/gastos" element={<GlobalModeGuard><ExpensesManagement /></GlobalModeGuard>} />
+            <Route path="/admin/respaldos" element={<GlobalModeGuard><BackupRestore /></GlobalModeGuard>} />
             {/* Redirects for old routes */}
             <Route path="/users" element={<Navigate to="/settings?tab=usuarios" replace />} />
             <Route path="/admin/cajas" element={<Navigate to="/settings?tab=cajas" replace />} />
