@@ -115,6 +115,7 @@ interface ImportResult {
 
 export function ImportSection() {
   const empresaId = useEmpresaId();
+  const { selectedEmpresa } = useEmpresaContext();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
