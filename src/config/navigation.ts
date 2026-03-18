@@ -7,6 +7,7 @@ import {
   Wallet,
   Settings,
   Building2,
+  Database,
   LucideIcon,
 } from "lucide-react";
 
@@ -67,6 +68,13 @@ export const navigationItems: NavigationItem[] = [
   path: "/settings",
   roles: ["supervisor", "admin"],
   mobileLabel: "Config",
+},
+{
+  icon: Database,
+  label: "Respaldos",
+  path: "/admin/respaldos",
+  roles: ["admin", "super_admin"],
+  mobileLabel: "Respaldos",
 },
 {
   icon: CreditCard,

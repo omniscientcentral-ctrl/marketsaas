@@ -18,6 +18,7 @@ import CashClosureHistory from "./pages/CashClosureHistory";
 import ExpensesManagement from "./pages/ExpensesManagement";
 import Empresas from "./pages/Empresas";
 import Planes from "./pages/Planes";
+import BackupRestore from "./pages/BackupRestore";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/settings" element={<GlobalModeGuard><Settings /></GlobalModeGuard>} />
             <Route path="/cash-closure" element={<GlobalModeGuard><CashClosure /></GlobalModeGuard>} />
             <Route path="/admin/gastos" element={<GlobalModeGuard><ExpensesManagement /></GlobalModeGuard>} />
+            <Route path="/admin/respaldos" element={<GlobalModeGuard><BackupRestore /></GlobalModeGuard>} />
             {/* Redirects for old routes */}
             <Route path="/users" element={<Navigate to="/settings?tab=usuarios" replace />} />
             <Route path="/admin/cajas" element={<Navigate to="/settings?tab=cajas" replace />} />

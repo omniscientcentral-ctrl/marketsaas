@@ -1,1 +1,4 @@
 project_id = "rrgbgujdjcxorvmuyhbc"
+
+[functions.backup-restore-data]
+verify_jwt = false
