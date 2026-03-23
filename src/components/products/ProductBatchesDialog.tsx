@@ -417,6 +417,7 @@ export function ProductBatchesDialog({
                     <th className="text-left p-3 text-sm font-medium">Ubicación</th>
                     <th className="text-left p-3 text-sm font-medium">Estado</th>
                     <th className="text-left p-3 text-sm font-medium">Recibido</th>
+                    <th className="text-left p-3 text-sm font-medium">Proveedor</th>
                     <th className="text-left p-3 text-sm font-medium">Acciones</th>
                   </tr>
                 </thead>
