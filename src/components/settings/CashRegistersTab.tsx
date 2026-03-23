@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, History, Power } from "lucide-react";
 import { toast } from "sonner";
 import { CashRegisterDialog } from "@/components/cash-registers/CashRegisterDialog";
 import { CashRegisterHistoryDialog } from "@/components/cash-registers/CashRegisterHistoryDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface CashRegister {
