@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import MainLayout from "@/components/layout/MainLayout";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface Product {
   id: string;
@@ -37,6 +38,7 @@ const Products = () => {
   const { user, loading, activeRole } = useAuth();
   const navigate = useNavigate();
   const empresaId = useEmpresaId();
+  const { canAddProduct, counts, limits } = usePlanLimits();
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -530,9 +532,14 @@ const Products = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                {!canAddProduct && (
+                  <p className="text-xs text-destructive">
+                    Límite: {counts.productos}/{limits.max_productos} productos
+                  </p>
+                )}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                <Button size="sm" className="h-9 md:h-10">
+                <Button size="sm" className="h-9 md:h-10" disabled={!canAddProduct}>
                   <Plus className="mr-0 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
                   <span className="hidden md:inline">Nuevo Producto</span>
                 </Button>

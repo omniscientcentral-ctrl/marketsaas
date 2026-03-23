@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, History, Power } from "lucide-react";
 import { toast } from "sonner";
 import { CashRegisterDialog } from "@/components/cash-registers/CashRegisterDialog";
 import { CashRegisterHistoryDialog } from "@/components/cash-registers/CashRegisterHistoryDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface CashRegister {
@@ -24,6 +25,7 @@ interface CashRegister {
 const CashRegistersTab = () => {
   const { user } = useAuth();
   const empresaId = useEmpresaId();
+  const { canAddCaja, counts, limits } = usePlanLimits();
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -175,10 +177,17 @@ const CashRegistersTab = () => {
                 Administrá los puntos de cobro de tu negocio
               </CardDescription>
             </div>
-            <Button onClick={() => { setSelectedRegister(null); setDialogOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Caja
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              <Button onClick={() => { setSelectedRegister(null); setDialogOpen(true); }} disabled={!canAddCaja}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva Caja
+              </Button>
+              {!canAddCaja && (
+                <p className="text-xs text-destructive">
+                  Límite alcanzado: {counts.cajas}/{limits.max_cajas} cajas
+                </p>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

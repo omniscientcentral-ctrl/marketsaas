@@ -13,6 +13,7 @@ import { Search, UserPlus, Edit, Key, Power, Eye, ChevronRight, Trash2 } from "l
 import { UserEditPanel } from "@/components/users/UserEditPanel";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { UserAuditDialog } from "@/components/users/UserAuditDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface UserData {
   id: string;
@@ -28,6 +29,7 @@ interface UserData {
 const UsersTab = () => {
   const { userRole } = useAuth();
   const empresaId = useEmpresaId();
+  const { canAddUser, counts, limits } = usePlanLimits();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,10 +189,17 @@ const UsersTab = () => {
           <p className="text-muted-foreground">Administra usuarios, roles y permisos</p>
         </div>
         
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Nuevo Usuario
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button onClick={() => setShowCreateDialog(true)} disabled={!canAddUser}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nuevo Usuario
+          </Button>
+          {!canAddUser && (
+            <p className="text-xs text-destructive">
+              Límite alcanzado: {counts.usuarios}/{limits.max_usuarios} usuarios
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}
