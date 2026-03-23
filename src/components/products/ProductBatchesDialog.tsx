@@ -86,11 +86,21 @@ export function ProductBatchesDialog({
     try {
       const { data, error } = await supabase
         .from("product_batches")
-        .select("*")
+        .select("*, supplier:suppliers(id, name)")
         .eq("product_id", productId)
         .order("expiration_date", { ascending: true });
 
       if (error) throw error;
+
+      if (empresaId) {
+        const { data: suppliersData } = await supabase
+          .from("suppliers")
+          .select("id, name")
+          .eq("empresa_id", empresaId)
+          .eq("is_active", true)
+          .order("name");
+        setAvailableSuppliers(suppliersData || []);
+      }
       setBatches(data || []);
     } catch (error: any) {
       console.error("Error fetching batches:", error);
