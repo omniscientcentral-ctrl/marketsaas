@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const usePlanLimits = () => {
   const empresaId = useEmpresaId();
-  const { roles } = useAuth();
+  const { userRoles: roles } = useAuth();
   const isSuperAdmin = roles?.includes("super_admin");
 
   const { data: planData, isLoading: loadingPlan } = useQuery({
