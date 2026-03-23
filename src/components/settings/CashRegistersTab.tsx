@@ -177,10 +177,17 @@ const CashRegistersTab = () => {
                 Administrá los puntos de cobro de tu negocio
               </CardDescription>
             </div>
-            <Button onClick={() => { setSelectedRegister(null); setDialogOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Caja
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              <Button onClick={() => { setSelectedRegister(null); setDialogOpen(true); }} disabled={!canAddCaja}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva Caja
+              </Button>
+              {!canAddCaja && (
+                <p className="text-xs text-destructive">
+                  Límite alcanzado: {counts.cajas}/{limits.max_cajas} cajas
+                </p>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

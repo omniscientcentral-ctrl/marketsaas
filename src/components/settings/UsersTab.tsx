@@ -189,10 +189,17 @@ const UsersTab = () => {
           <p className="text-muted-foreground">Administra usuarios, roles y permisos</p>
         </div>
         
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Nuevo Usuario
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button onClick={() => setShowCreateDialog(true)} disabled={!canAddUser}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nuevo Usuario
+          </Button>
+          {!canAddUser && (
+            <p className="text-xs text-destructive">
+              Límite alcanzado: {counts.usuarios}/{limits.max_usuarios} usuarios
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}

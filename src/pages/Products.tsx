@@ -532,9 +532,14 @@ const Products = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                {!canAddProduct && (
+                  <p className="text-xs text-destructive">
+                    Límite: {counts.productos}/{limits.max_productos} productos
+                  </p>
+                )}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                <Button size="sm" className="h-9 md:h-10">
+                <Button size="sm" className="h-9 md:h-10" disabled={!canAddProduct}>
                   <Plus className="mr-0 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
                   <span className="hidden md:inline">Nuevo Producto</span>
                 </Button>
