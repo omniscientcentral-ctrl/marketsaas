@@ -29,6 +29,7 @@ interface UserData {
 const UsersTab = () => {
   const { userRole } = useAuth();
   const empresaId = useEmpresaId();
+  const { canAddUser, counts, limits } = usePlanLimits();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
