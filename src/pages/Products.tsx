@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import MainLayout from "@/components/layout/MainLayout";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface Product {
   id: string;
