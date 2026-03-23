@@ -185,6 +185,7 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
     }
 
     const expenseData = {
+      empresa_id: empresaId,
       supplier_id: supplierId,
       amount: Number(amount),
       payment_method: paymentMethod,
