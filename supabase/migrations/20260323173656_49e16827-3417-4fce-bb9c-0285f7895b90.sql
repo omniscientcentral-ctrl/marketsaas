@@ -1,0 +1,1 @@
+ALTER TABLE product_batches ADD COLUMN IF NOT EXISTS supplier_id UUID REFERENCES suppliers(id) ON DELETE SET NULL;

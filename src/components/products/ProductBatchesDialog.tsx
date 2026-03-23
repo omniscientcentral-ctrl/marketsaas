@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar, Plus, AlertTriangle, Trash2, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { es } from "date-fns/locale";
 import {
   AlertDialog,
@@ -32,6 +34,8 @@ interface ProductBatch {
   notes: string | null;
   status: string;
   location: string | null;
+  supplier_id: string | null;
+  supplier?: { id: string; name: string } | null;
 }
 
 interface ProductBatchesDialogProps {
@@ -56,6 +60,7 @@ export function ProductBatchesDialog({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<ProductBatch | null>(null);
   const { toast } = useToast();
+  const empresaId = useEmpresaId();
 
   // Form state
   const [quantity, setQuantity] = useState("");
@@ -64,6 +69,8 @@ export function ProductBatchesDialog({
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [location, setLocation] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [availableSuppliers, setAvailableSuppliers] = useState<{id: string; name: string}[]>([]);
   
   // Dispose confirmation state
   const [disposeDialogOpen, setDisposeDialogOpen] = useState(false);
@@ -79,11 +86,21 @@ export function ProductBatchesDialog({
     try {
       const { data, error } = await supabase
         .from("product_batches")
-        .select("*")
+        .select("*, supplier:suppliers(id, name)")
         .eq("product_id", productId)
         .order("expiration_date", { ascending: true });
 
       if (error) throw error;
+
+      if (empresaId) {
+        const { data: suppliersData } = await supabase
+          .from("suppliers")
+          .select("id, name")
+          .eq("empresa_id", empresaId)
+          .eq("is_active", true)
+          .order("name");
+        setAvailableSuppliers(suppliersData || []);
+      }
       setBatches(data || []);
     } catch (error: any) {
       console.error("Error fetching batches:", error);
@@ -108,6 +125,7 @@ export function ProductBatchesDialog({
     setCost("");
     setNotes("");
     setLocation("");
+    setSupplierId("");
     setShowAddForm(false);
     setEditingBatch(null);
   };
@@ -120,6 +138,7 @@ export function ProductBatchesDialog({
     setCost(batch.cost ? String(batch.cost) : "");
     setNotes(batch.notes || "");
     setLocation(batch.location || "");
+    setSupplierId(batch.supplier_id || "");
     setShowAddForm(true);
   };
 
@@ -156,6 +175,7 @@ export function ProductBatchesDialog({
         cost: cost ? parseFloat(cost) : 0,
         notes: notes || null,
         location: location || null,
+        supplier_id: supplierId || null,
         status: "active",
         created_by: user?.id,
       });
@@ -235,6 +255,7 @@ export function ProductBatchesDialog({
           cost: cost ? parseFloat(cost) : 0,
           notes: notes || null,
           location: location || null,
+          supplier_id: supplierId || null,
         })
         .eq("id", editingBatch.id);
 
@@ -396,6 +417,7 @@ export function ProductBatchesDialog({
                     <th className="text-left p-3 text-sm font-medium">Ubicación</th>
                     <th className="text-left p-3 text-sm font-medium">Estado</th>
                     <th className="text-left p-3 text-sm font-medium">Recibido</th>
+                    <th className="text-left p-3 text-sm font-medium">Proveedor</th>
                     <th className="text-left p-3 text-sm font-medium">Acciones</th>
                   </tr>
                 </thead>
@@ -427,6 +449,9 @@ export function ProductBatchesDialog({
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {format(parseISO(batch.received_at), "dd/MM/yyyy", { locale: es })}
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {batch.supplier?.name || "—"}
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1">
@@ -537,6 +562,21 @@ export function ProductBatchesDialog({
                     onChange={(e) => setCost(e.target.value)}
                     placeholder="Opcional"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="supplier">Proveedor</Label>
+                  <Select value={supplierId} onValueChange={(val) => setSupplierId(val === "none" ? "" : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar proveedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin proveedor</SelectItem>
+                      {availableSuppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -1099,6 +1099,7 @@ export type Database = {
           quantity: number
           received_at: string | null
           status: string | null
+          supplier_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1116,6 +1117,7 @@ export type Database = {
           quantity?: number
           received_at?: string | null
           status?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1133,6 +1135,7 @@ export type Database = {
           quantity?: number
           received_at?: string | null
           status?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1148,6 +1151,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
