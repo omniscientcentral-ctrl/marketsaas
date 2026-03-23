@@ -255,6 +255,7 @@ export function ProductBatchesDialog({
           cost: cost ? parseFloat(cost) : 0,
           notes: notes || null,
           location: location || null,
+          supplier_id: supplierId || null,
         })
         .eq("id", editingBatch.id);
 
