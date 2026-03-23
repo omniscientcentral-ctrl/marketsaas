@@ -13,6 +13,7 @@ import { Search, UserPlus, Edit, Key, Power, Eye, ChevronRight, Trash2 } from "l
 import { UserEditPanel } from "@/components/users/UserEditPanel";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { UserAuditDialog } from "@/components/users/UserAuditDialog";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface UserData {
   id: string;
