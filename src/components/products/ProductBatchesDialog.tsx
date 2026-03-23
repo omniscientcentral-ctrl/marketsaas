@@ -125,6 +125,7 @@ export function ProductBatchesDialog({
     setCost("");
     setNotes("");
     setLocation("");
+    setSupplierId("");
     setShowAddForm(false);
     setEditingBatch(null);
   };
