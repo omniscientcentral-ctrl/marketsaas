@@ -450,6 +450,9 @@ export function ProductBatchesDialog({
                         <td className="p-3 text-sm text-muted-foreground">
                           {format(parseISO(batch.received_at), "dd/MM/yyyy", { locale: es })}
                         </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {batch.supplier?.name || "—"}
+                        </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1">
                             {canEdit && (
