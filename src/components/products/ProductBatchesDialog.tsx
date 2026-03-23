@@ -34,6 +34,8 @@ interface ProductBatch {
   notes: string | null;
   status: string;
   location: string | null;
+  supplier_id: string | null;
+  supplier?: { id: string; name: string } | null;
 }
 
 interface ProductBatchesDialogProps {
