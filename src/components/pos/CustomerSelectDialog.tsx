@@ -67,12 +67,16 @@ const CustomerSelectDialog = ({ open, onClose, onSelect, onClear }: CustomerSele
     onClear();
   };
 
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredCustomers = customers.filter((c) => {
+    const term = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(term) ||
+      c.last_name?.toLowerCase().includes(term) ||
+      `${c.name} ${c.last_name || ""}`.toLowerCase().includes(term) ||
       c.document?.includes(search) ||
       c.phone?.includes(search)
-  );
+    );
+  });
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
