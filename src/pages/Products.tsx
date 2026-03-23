@@ -38,6 +38,7 @@ const Products = () => {
   const { user, loading, activeRole } = useAuth();
   const navigate = useNavigate();
   const empresaId = useEmpresaId();
+  const { canAddProduct, counts, limits } = usePlanLimits();
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
