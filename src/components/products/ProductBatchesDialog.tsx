@@ -60,6 +60,7 @@ export function ProductBatchesDialog({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBatch, setEditingBatch] = useState<ProductBatch | null>(null);
   const { toast } = useToast();
+  const empresaId = useEmpresaId();
 
   // Form state
   const [quantity, setQuantity] = useState("");
@@ -68,6 +69,8 @@ export function ProductBatchesDialog({
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [location, setLocation] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [availableSuppliers, setAvailableSuppliers] = useState<{id: string; name: string}[]>([]);
   
   // Dispose confirmation state
   const [disposeDialogOpen, setDisposeDialogOpen] = useState(false);
