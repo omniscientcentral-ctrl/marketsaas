@@ -88,6 +88,10 @@ const ExpensesTab = () => {
       `)
       .order("expense_date", { ascending: false });
 
+    if (empresaId) {
+      query = query.eq("empresa_id", empresaId);
+    }
+
     if (dateFrom) {
       query = query.gte("expense_date", dateFrom.toISOString());
     }
