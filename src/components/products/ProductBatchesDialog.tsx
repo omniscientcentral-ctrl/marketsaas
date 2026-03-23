@@ -138,6 +138,7 @@ export function ProductBatchesDialog({
     setCost(batch.cost ? String(batch.cost) : "");
     setNotes(batch.notes || "");
     setLocation(batch.location || "");
+    setSupplierId(batch.supplier_id || "");
     setShowAddForm(true);
   };
 
