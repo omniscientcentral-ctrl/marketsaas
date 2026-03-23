@@ -563,6 +563,21 @@ export function ProductBatchesDialog({
                     placeholder="Opcional"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="supplier">Proveedor</Label>
+                  <Select value={supplierId} onValueChange={(val) => setSupplierId(val === "none" ? "" : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar proveedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin proveedor</SelectItem>
+                      {availableSuppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
