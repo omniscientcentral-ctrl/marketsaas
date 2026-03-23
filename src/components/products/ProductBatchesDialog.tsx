@@ -175,6 +175,7 @@ export function ProductBatchesDialog({
         cost: cost ? parseFloat(cost) : 0,
         notes: notes || null,
         location: location || null,
+        supplier_id: supplierId || null,
         status: "active",
         created_by: user?.id,
       });
