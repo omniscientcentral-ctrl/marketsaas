@@ -1316,6 +1316,114 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          created_at: string | null
+          expiration_date: string | null
+          id: string
+          product_id: string
+          product_name: string
+          purchase_order_id: string
+          quantity: number
+          subtotal: number | null
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          purchase_order_id: string
+          quantity: number
+          subtotal?: number | null
+          unit_cost: number
+        }
+        Update: {
+          created_at?: string | null
+          expiration_date?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          purchase_order_id?: string
+          quantity?: number
+          subtotal?: number | null
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          empresa_id: string
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: number
+          status: string
+          supplier_id: string
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: number
+          status?: string
+          supplier_id: string
+          total?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: number
+          status?: string
+          supplier_id?: string
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       returns: {
         Row: {
           authorized_by: string | null
