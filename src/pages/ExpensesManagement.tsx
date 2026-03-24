@@ -11,7 +11,8 @@ import PurchaseOrdersTab from "@/components/expenses/PurchaseOrdersTab";
 const ExpensesManagement = () => {
   const navigate = useNavigate();
   const { user, activeRole, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("gastos");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "gastos");
 
   useEffect(() => {
     if (loading) return;
