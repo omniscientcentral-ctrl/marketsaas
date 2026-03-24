@@ -1697,7 +1697,7 @@ const POS = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowExpenseDialog(true)}
+                onClick={() => setShowExpenseTypeDialog(true)}
                 className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 aria-label="Registrar gasto"
               >
