@@ -58,9 +58,10 @@ const ExpensesManagement = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
               <TabsTrigger value="gastos">Gastos</TabsTrigger>
               <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
+              <TabsTrigger value="ordenes">Órdenes</TabsTrigger>
             </TabsList>
 
             <TabsContent value="gastos" className="mt-6">
@@ -69,6 +70,10 @@ const ExpensesManagement = () => {
 
             <TabsContent value="proveedores" className="mt-6">
               <SuppliersTab />
+            </TabsContent>
+
+            <TabsContent value="ordenes" className="mt-6">
+              <PurchaseOrdersTab />
             </TabsContent>
           </Tabs>
         </div>
