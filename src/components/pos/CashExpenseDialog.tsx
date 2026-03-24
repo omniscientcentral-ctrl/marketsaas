@@ -103,7 +103,7 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
               <SelectTrigger id="expense-category">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="z-[300]">
                 <SelectItem value="withdrawal">Retiro de efectivo</SelectItem>
                 <SelectItem value="operational">Gasto operativo</SelectItem>
                 <SelectItem value="other">Otro</SelectItem>
