@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { DollarSign } from "lucide-react";
+import { DollarSign, ShoppingCart } from "lucide-react";
 
 interface CashExpenseDialogProps {
   open: boolean;
@@ -120,7 +120,9 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
               onOpenChange(false);
               navigate("/admin/gastos?tab=ordenes");
             }}
+            disabled={saving}
           >
+            <ShoppingCart className="h-4 w-4 mr-1" />
             Nueva Orden de Compra
           </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
