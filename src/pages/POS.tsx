@@ -33,6 +33,7 @@ import CashRegisterSelectionModal from "@/components/pos/CashRegisterSelectionMo
 import SupervisorPinDialog from "@/components/pos/SupervisorPinDialog";
 import { ReturnsAndLossesDialog } from "@/components/pos/ReturnsAndLossesDialog";
 import ExpenseDialog from "@/components/expenses/ExpenseDialog";
+import ExpenseTypeDialog from "@/components/pos/ExpenseTypeDialog";
 import type { Supplier } from "@/components/expenses/ExpensesTab";
 import GenericProductDialog from "@/components/pos/GenericProductDialog";
 import { format, differenceInDays, parseISO } from "date-fns";
