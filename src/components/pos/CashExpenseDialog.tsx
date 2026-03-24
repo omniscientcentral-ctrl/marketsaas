@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface CashExpenseDialogProps {
 }
 
 const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashExpenseDialogProps) => {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("withdrawal");
@@ -111,6 +113,16 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
         </div>
 
         <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+              navigate("/admin/gastos?tab=ordenes");
+            }}
+          >
+            Nueva Orden de Compra
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
