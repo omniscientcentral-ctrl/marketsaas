@@ -113,8 +113,19 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
         </div>
 
         <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+              navigate("/admin/gastos?tab=ordenes");
+            }}
+          >
+            Nueva Orden de Compra
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
+          </Button>
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving ? "Registrando..." : "Registrar Gasto"}
