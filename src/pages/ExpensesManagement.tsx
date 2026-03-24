@@ -13,6 +13,7 @@ const ExpensesManagement = () => {
   const { user, activeRole, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "gastos");
+  const autoOpenNew = searchParams.get("new") === "1";
 
   useEffect(() => {
     if (loading) return;
