@@ -84,7 +84,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
 
   const total = useMemo(
     () => items.reduce((sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.unit_cost) || 0), 0),
-    [items]
+    [items],
   );
 
   const handleSubmit = async () => {
@@ -153,7 +153,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
         empresa_id: empresaId,
         supplier_id: supplierId,
         amount: total,
-        payment_method: "pending",
+        payment_method: "transfer",
         payment_status: "pending",
         expense_date: orderDate,
         notes: `Orden de compra #${(order as any).order_number}`,
@@ -188,7 +188,9 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -222,7 +224,9 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -263,9 +267,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
             ))}
 
             {items.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Agregá productos a la orden
-              </p>
+              <p className="text-sm text-muted-foreground text-center py-4">Agregá productos a la orden</p>
             )}
           </div>
 
@@ -275,7 +277,9 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onClose()} disabled={loading}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onClose()} disabled={loading}>
+            Cancelar
+          </Button>
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Guardando..." : "Guardar Orden"}
           </Button>
