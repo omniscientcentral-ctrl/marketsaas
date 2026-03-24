@@ -59,7 +59,7 @@ const Products = () => {
     name: "",
     price: "",
     cost: "",
-    stock: "",
+    stock: "0",
     min_stock: "5",
     barcode: "",
     category: "",
