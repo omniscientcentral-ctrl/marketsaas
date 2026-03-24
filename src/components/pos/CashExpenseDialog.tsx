@@ -64,7 +64,7 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-[200]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -113,18 +113,6 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              navigate("/admin/gastos?tab=ordenes");
-            }}
-            disabled={saving}
-          >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Nueva Orden de Compra
-          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
