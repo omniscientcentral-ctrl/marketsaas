@@ -154,7 +154,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
         supplier_id: supplierId,
         amount: total,
         payment_method: "transfer",
-        payment_status: "pendiente",
+        payment_status: "pending",
         expense_date: orderDate,
         notes: `Orden de compra #${(order as any).order_number}`,
         created_by: user.id,
