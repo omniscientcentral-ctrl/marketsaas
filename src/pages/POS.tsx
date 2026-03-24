@@ -2085,6 +2085,12 @@ const POS = () => {
           suppliers={suppliers}
         />
 
+        <ExpenseTypeDialog
+          open={showExpenseTypeDialog}
+          onClose={() => setShowExpenseTypeDialog(false)}
+          onSelectExpense={() => setShowExpenseDialog(true)}
+        />
+
         <CashRegisterSelectionModal
           open={showCashRegisterModal}
           userId={user?.id || ""}
