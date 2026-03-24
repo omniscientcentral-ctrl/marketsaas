@@ -64,7 +64,7 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-[200]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
