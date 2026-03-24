@@ -17,6 +17,7 @@ interface CashExpenseDialogProps {
 }
 
 const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashExpenseDialogProps) => {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("withdrawal");
