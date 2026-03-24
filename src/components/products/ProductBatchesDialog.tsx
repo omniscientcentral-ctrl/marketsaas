@@ -377,6 +377,26 @@ export function ProductBatchesDialog({
         reason: "expired",
       });
 
+      // Sincronizar product_stock_balance con el nuevo stock
+      const { data: updatedProduct } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", productId)
+        .single();
+
+      if (updatedProduct) {
+        await supabase
+          .from("product_stock_balance")
+          .upsert(
+            {
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+      }
+
       toast({
         title: "Lote dado de baja",
         description: `Se retiraron ${batchToDispose.quantity} unidades del stock`,
