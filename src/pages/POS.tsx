@@ -152,6 +152,7 @@ const POS = () => {
   const [showReturnsDialog, setShowReturnsDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [showExpenseTypeDialog, setShowExpenseTypeDialog] = useState(false);
+  const [showCashExpenseDialog, setShowCashExpenseDialog] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showGenericProduct, setShowGenericProduct] = useState(false);
   const [canEditPrice, setCanEditPrice] = useState(false);
