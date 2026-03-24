@@ -537,9 +537,14 @@ const Products = () => {
                     Límite: {counts.productos}/{limits.max_productos} productos
                   </p>
                 )}
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                  if (!open) {
+                    resetForm();
+                  }
+                  setIsDialogOpen(open);
+                }}>
                 <DialogTrigger asChild>
-                <Button size="sm" className="h-9 md:h-10" disabled={!canAddProduct}>
+                <Button size="sm" className="h-9 md:h-10" disabled={!canAddProduct} onClick={() => resetForm()}>
                   <Plus className="mr-0 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
                   <span className="hidden md:inline">Nuevo Producto</span>
                 </Button>
