@@ -33,6 +33,7 @@ import CashRegisterSelectionModal from "@/components/pos/CashRegisterSelectionMo
 import SupervisorPinDialog from "@/components/pos/SupervisorPinDialog";
 import { ReturnsAndLossesDialog } from "@/components/pos/ReturnsAndLossesDialog";
 import ExpenseDialog from "@/components/expenses/ExpenseDialog";
+import ExpenseTypeDialog from "@/components/pos/ExpenseTypeDialog";
 import type { Supplier } from "@/components/expenses/ExpensesTab";
 import GenericProductDialog from "@/components/pos/GenericProductDialog";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -149,6 +150,7 @@ const POS = () => {
   const [pendingSalesCount, setPendingSalesCount] = useState(0);
   const [showReturnsDialog, setShowReturnsDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [showExpenseTypeDialog, setShowExpenseTypeDialog] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showGenericProduct, setShowGenericProduct] = useState(false);
   const [canEditPrice, setCanEditPrice] = useState(false);
@@ -1695,7 +1697,7 @@ const POS = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowExpenseDialog(true)}
+                onClick={() => setShowExpenseTypeDialog(true)}
                 className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 aria-label="Registrar gasto"
               >
@@ -2081,6 +2083,12 @@ const POS = () => {
           onClose={() => setShowExpenseDialog(false)}
           expense={null}
           suppliers={suppliers}
+        />
+
+        <ExpenseTypeDialog
+          open={showExpenseTypeDialog}
+          onClose={() => setShowExpenseTypeDialog(false)}
+          onSelectExpense={() => setShowExpenseDialog(true)}
         />
 
         <CashRegisterSelectionModal
