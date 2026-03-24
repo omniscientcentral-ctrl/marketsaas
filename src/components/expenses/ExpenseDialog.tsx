@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -41,6 +42,7 @@ interface ExpenseDialogProps {
 }
 
 const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const empresaId = useEmpresaId();
   const [loading, setLoading] = useState(false);
@@ -428,6 +430,13 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => { onClose(); navigate("/admin/gastos?tab=ordenes"); }}
+            >
+              Nueva Orden de Compra
+            </Button>
             <Button type="button" variant="outline" onClick={() => onClose()}>
               Cancelar
             </Button>
