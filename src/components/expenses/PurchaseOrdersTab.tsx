@@ -21,6 +21,9 @@ interface PurchaseOrdersTabProps {
 
 const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const empresaId = useEmpresaId();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const cameFromPOS = searchParams.get("from") === "pos";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
 
