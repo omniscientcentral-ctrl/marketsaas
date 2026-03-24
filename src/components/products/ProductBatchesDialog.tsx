@@ -207,6 +207,26 @@ export function ProductBatchesDialog({
         notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""} - Vence: ${expirationDate}`,
       });
 
+      // Sincronizar product_stock_balance con el nuevo stock
+      const { data: updatedProduct } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", productId)
+        .single();
+
+      if (updatedProduct) {
+        await supabase
+          .from("product_stock_balance")
+          .upsert(
+            {
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+      }
+
       toast({
         title: "Lote agregado",
         description: `Se agregaron ${quantityValue} unidades al stock`,
@@ -282,6 +302,26 @@ export function ProductBatchesDialog({
         });
       }
 
+      // Sincronizar product_stock_balance con el nuevo stock
+      const { data: updatedProduct } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", productId)
+        .single();
+
+      if (updatedProduct) {
+        await supabase
+          .from("product_stock_balance")
+          .upsert(
+            {
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+      }
+
       toast({
         title: "Lote actualizado",
         description: "Los datos del lote fueron corregidos correctamente",
@@ -336,6 +376,26 @@ export function ProductBatchesDialog({
         notes: `Baja por vencimiento - Lote ${batchToDispose.batch_number || batchToDispose.id.slice(0, 8)} - Venció: ${batchToDispose.expiration_date}`,
         reason: "expired",
       });
+
+      // Sincronizar product_stock_balance con el nuevo stock
+      const { data: updatedProduct } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", productId)
+        .single();
+
+      if (updatedProduct) {
+        await supabase
+          .from("product_stock_balance")
+          .upsert(
+            {
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+      }
 
       toast({
         title: "Lote dado de baja",
