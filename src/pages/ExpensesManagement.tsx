@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import ExpensesTab from "@/components/expenses/ExpensesTab";
 import SuppliersTab from "@/components/expenses/SuppliersTab";
+import PurchaseOrdersTab from "@/components/expenses/PurchaseOrdersTab";
 
 const ExpensesManagement = () => {
   const navigate = useNavigate();
