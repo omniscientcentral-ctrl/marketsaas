@@ -52,6 +52,9 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     if (refresh) {
       queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
     }
+    if (cameFromPOS) {
+      navigate("/pos");
+    }
   };
 
   return (
