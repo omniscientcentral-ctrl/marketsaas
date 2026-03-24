@@ -376,7 +376,7 @@ const Products = () => {
           name: formData.name,
           price: parseFloat(formData.price),
           cost: parseFloat(formData.cost),
-          stock: newStock,
+          stock: 0,
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
           category: formData.category || null,
@@ -394,7 +394,7 @@ const Products = () => {
         // Crear balance inicial
         await supabase.from("product_stock_balance").insert({
           product_id: newProduct.id,
-          current_balance: newStock,
+          current_balance: 0,
           last_movement_at: new Date().toISOString(),
           empresa_id: empresaId,
         });
