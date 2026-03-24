@@ -42,6 +42,7 @@ interface ExpenseDialogProps {
 }
 
 const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const empresaId = useEmpresaId();
   const [loading, setLoading] = useState(false);
