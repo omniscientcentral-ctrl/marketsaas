@@ -126,7 +126,6 @@ const CashExpenseDialog = ({ open, onOpenChange, cashRegisterId, userId }: CashE
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
-          </Button>
           <Button onClick={handleSubmit} disabled={saving}>
             {saving ? "Registrando..." : "Registrar Gasto"}
           </Button>
