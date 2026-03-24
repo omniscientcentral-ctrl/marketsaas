@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -14,10 +14,20 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   cancelled: { label: "Cancelada", className: "bg-red-100 text-red-800 border-red-300" },
 };
 
-const PurchaseOrdersTab = () => {
+interface PurchaseOrdersTabProps {
+  autoOpenNew?: boolean;
+}
+
+const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const empresaId = useEmpresaId();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (autoOpenNew) {
+      setDialogOpen(true);
+    }
+  }, [autoOpenNew]);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["purchase-orders", empresaId],

@@ -34,6 +34,7 @@ import SupervisorPinDialog from "@/components/pos/SupervisorPinDialog";
 import { ReturnsAndLossesDialog } from "@/components/pos/ReturnsAndLossesDialog";
 import ExpenseDialog from "@/components/expenses/ExpenseDialog";
 import ExpenseTypeDialog from "@/components/pos/ExpenseTypeDialog";
+import CashExpenseDialog from "@/components/pos/CashExpenseDialog";
 import type { Supplier } from "@/components/expenses/ExpensesTab";
 import GenericProductDialog from "@/components/pos/GenericProductDialog";
 import { format, differenceInDays, parseISO } from "date-fns";
@@ -151,6 +152,7 @@ const POS = () => {
   const [showReturnsDialog, setShowReturnsDialog] = useState(false);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [showExpenseTypeDialog, setShowExpenseTypeDialog] = useState(false);
+  const [showCashExpenseDialog, setShowCashExpenseDialog] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showGenericProduct, setShowGenericProduct] = useState(false);
   const [canEditPrice, setCanEditPrice] = useState(false);
@@ -2088,7 +2090,14 @@ const POS = () => {
         <ExpenseTypeDialog
           open={showExpenseTypeDialog}
           onClose={() => setShowExpenseTypeDialog(false)}
-          onSelectExpense={() => setShowExpenseDialog(true)}
+          onSelectExpense={() => setShowCashExpenseDialog(true)}
+        />
+
+        <CashExpenseDialog
+          open={showCashExpenseDialog}
+          onOpenChange={setShowCashExpenseDialog}
+          cashRegisterId={currentSession?.id || null}
+          userId={user?.id}
         />
 
         <CashRegisterSelectionModal

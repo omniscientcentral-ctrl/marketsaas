@@ -35,7 +35,7 @@ const ExpenseTypeDialog = ({ open, onClose, onSelectExpense }: ExpenseTypeDialog
           <Button
             variant="outline"
             className="h-auto py-4 flex flex-col items-start gap-1"
-            onClick={() => { onClose(); navigate("/admin/gastos?tab=ordenes"); }}
+            onClick={() => { onClose(); navigate("/admin/gastos?tab=ordenes&new=1"); }}
           >
             <div className="flex items-center gap-2 font-semibold">
               <ShoppingCart className="h-5 w-5 text-primary" />
