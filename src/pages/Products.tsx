@@ -587,21 +587,23 @@ const Products = () => {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="stock">Stock *</Label>
-                      <Input
-                        id="stock"
-                        type="number"
-                        value={formData.stock}
-                        onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                        required
-                        disabled={!!(editingProduct && batchCounts[editingProduct.id] > 0)}
-                      />
-                      {editingProduct && batchCounts[editingProduct.id] > 0 && (
-                        <p className="text-xs text-muted-foreground">Gestionado por lotes</p>
-                      )}
-                    </div>
+                  <div className={editingProduct ? "grid grid-cols-2 gap-4" : ""}>
+                    {editingProduct && (
+                      <div className="space-y-2">
+                        <Label htmlFor="stock">Stock *</Label>
+                        <Input
+                          id="stock"
+                          type="number"
+                          value={formData.stock}
+                          onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                          required
+                          disabled={!!(batchCounts[editingProduct.id] > 0)}
+                        />
+                        {batchCounts[editingProduct.id] > 0 && (
+                          <p className="text-xs text-muted-foreground">Gestionado por lotes</p>
+                        )}
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="min_stock">Stock Mínimo *</Label>
                       <Input
