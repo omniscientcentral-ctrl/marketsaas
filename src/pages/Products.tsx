@@ -59,7 +59,7 @@ const Products = () => {
     name: "",
     price: "",
     cost: "",
-    stock: "",
+    stock: "0",
     min_stock: "5",
     barcode: "",
     category: "",
@@ -376,7 +376,7 @@ const Products = () => {
           name: formData.name,
           price: parseFloat(formData.price),
           cost: parseFloat(formData.cost),
-          stock: newStock,
+          stock: 0,
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
           category: formData.category || null,
@@ -394,7 +394,7 @@ const Products = () => {
         // Crear balance inicial
         await supabase.from("product_stock_balance").insert({
           product_id: newProduct.id,
-          current_balance: newStock,
+          current_balance: 0,
           last_movement_at: new Date().toISOString(),
           empresa_id: empresaId,
         });
@@ -447,7 +447,7 @@ const Products = () => {
       name: "",
       price: "",
       cost: "",
-      stock: "",
+      stock: "0",
       min_stock: "5",
       barcode: "",
       category: "",
@@ -587,21 +587,23 @@ const Products = () => {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="stock">Stock *</Label>
-                      <Input
-                        id="stock"
-                        type="number"
-                        value={formData.stock}
-                        onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                        required
-                        disabled={!!(editingProduct && batchCounts[editingProduct.id] > 0)}
-                      />
-                      {editingProduct && batchCounts[editingProduct.id] > 0 && (
-                        <p className="text-xs text-muted-foreground">Gestionado por lotes</p>
-                      )}
-                    </div>
+                  <div className={editingProduct ? "grid grid-cols-2 gap-4" : ""}>
+                    {editingProduct && (
+                      <div className="space-y-2">
+                        <Label htmlFor="stock">Stock *</Label>
+                        <Input
+                          id="stock"
+                          type="number"
+                          value={formData.stock}
+                          onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                          required
+                          disabled={!!(batchCounts[editingProduct.id] > 0)}
+                        />
+                        {batchCounts[editingProduct.id] > 0 && (
+                          <p className="text-xs text-muted-foreground">Gestionado por lotes</p>
+                        )}
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="min_stock">Stock Mínimo *</Label>
                       <Input
