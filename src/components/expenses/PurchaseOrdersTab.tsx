@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -20,6 +21,9 @@ interface PurchaseOrdersTabProps {
 
 const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const empresaId = useEmpresaId();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const cameFromPOS = searchParams.get("from") === "pos";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -47,6 +51,9 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     setDialogOpen(false);
     if (refresh) {
       queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    }
+    if (cameFromPOS) {
+      navigate("/pos");
     }
   };
 
