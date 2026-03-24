@@ -501,11 +501,11 @@ export function ProductBatchesDialog({
                             {format(parseISO(batch.expiration_date), "dd/MM/yyyy", { locale: es })}
                           </div>
                         </td>
-                        <td className="p-3">
-                          {getExpirationBadge(batch.expiration_date)}
-                        </td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {batch.location || "—"}
+                        </td>
+                        <td className="p-3">
+                          {getExpirationBadge(batch.expiration_date)}
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {format(parseISO(batch.received_at), "dd/MM/yyyy", { locale: es })}
