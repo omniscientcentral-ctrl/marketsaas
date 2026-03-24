@@ -75,7 +75,7 @@ const ExpensesManagement = () => {
             </TabsContent>
 
             <TabsContent value="ordenes" className="mt-6">
-              <PurchaseOrdersTab />
+              <PurchaseOrdersTab autoOpenNew={autoOpenNew} />
             </TabsContent>
           </Tabs>
         </div>

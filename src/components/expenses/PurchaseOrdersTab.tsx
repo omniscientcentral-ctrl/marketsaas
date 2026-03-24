@@ -23,6 +23,12 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  useEffect(() => {
+    if (autoOpenNew) {
+      setDialogOpen(true);
+    }
+  }, [autoOpenNew]);
+
   const { data: orders, isLoading } = useQuery({
     queryKey: ["purchase-orders", empresaId],
     enabled: !!empresaId,

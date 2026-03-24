@@ -2090,7 +2090,14 @@ const POS = () => {
         <ExpenseTypeDialog
           open={showExpenseTypeDialog}
           onClose={() => setShowExpenseTypeDialog(false)}
-          onSelectExpense={() => setShowExpenseDialog(true)}
+          onSelectExpense={() => setShowCashExpenseDialog(true)}
+        />
+
+        <CashExpenseDialog
+          open={showCashExpenseDialog}
+          onOpenChange={setShowCashExpenseDialog}
+          cashRegisterId={currentSession?.id || null}
+          userId={user?.id}
         />
 
         <CashRegisterSelectionModal
