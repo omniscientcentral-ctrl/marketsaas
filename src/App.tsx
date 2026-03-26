@@ -29,6 +29,7 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <Toaster />
       <Sonner />
+      <UpdatePrompt />
       <BrowserRouter>
         <EmpresaProvider>
           <Routes>
