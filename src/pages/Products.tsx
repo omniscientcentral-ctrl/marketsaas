@@ -378,7 +378,7 @@ const Products = () => {
         const productData = {
           name: formData.name,
           price: parseFloat(formData.price),
-          cost: parseFloat(formData.cost),
+          cost: 0,
           stock: 0,
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
@@ -583,33 +583,35 @@ const Products = () => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cost">Costo *</Label>
-                      {editingProduct && (batchCounts[editingProduct.id] || 0) > 0 ? (
-                        <>
+                    {editingProduct && (
+                      <div className="space-y-2">
+                        <Label htmlFor="cost">Costo *</Label>
+                        {(batchCounts[editingProduct.id] || 0) > 0 ? (
+                          <>
+                            <Input
+                              id="cost"
+                              type="number"
+                              step="0.01"
+                              value={formData.cost}
+                              disabled
+                              className="bg-muted"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Calculado automáticamente desde lotes activos
+                            </p>
+                          </>
+                        ) : (
                           <Input
                             id="cost"
                             type="number"
                             step="0.01"
                             value={formData.cost}
-                            disabled
-                            className="bg-muted"
+                            onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                            required
                           />
-                          <p className="text-xs text-muted-foreground">
-                            Calculado automáticamente desde lotes activos
-                          </p>
-                        </>
-                      ) : (
-                        <Input
-                          id="cost"
-                          type="number"
-                          step="0.01"
-                          value={formData.cost}
-                          onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                          required
-                        />
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="min_stock">Stock Mínimo *</Label>
