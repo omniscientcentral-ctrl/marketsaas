@@ -582,14 +582,30 @@ const Products = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cost">Costo *</Label>
-                      <Input
-                        id="cost"
-                        type="number"
-                        step="0.01"
-                        value={formData.cost}
-                        onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                        required
-                      />
+                      {editingProduct && (batchCounts[editingProduct.id] || 0) > 0 ? (
+                        <>
+                          <Input
+                            id="cost"
+                            type="number"
+                            step="0.01"
+                            value={formData.cost}
+                            disabled
+                            className="bg-muted"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Calculado automáticamente desde lotes activos
+                          </p>
+                        </>
+                      ) : (
+                        <Input
+                          id="cost"
+                          type="number"
+                          step="0.01"
+                          value={formData.cost}
+                          onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                          required
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
