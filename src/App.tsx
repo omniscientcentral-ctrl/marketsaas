@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { EmpresaProvider } from "./contexts/EmpresaContext";
 import { GlobalModeGuard } from "./components/GlobalModeGuard";
 
+import UpdatePrompt from "@/components/UpdatePrompt";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
