@@ -320,7 +320,6 @@ const Products = () => {
         if (error) throw error;
 
         // Solo ajustar stock manualmente si NO tiene lotes activos
-        const hasBatches = batchCounts[editingProduct.id] > 0;
         if (!hasBatches) {
           // Si el stock cambió, crear movimiento de inventario
           // Obtener balance actual y aplicar ajuste absoluto
