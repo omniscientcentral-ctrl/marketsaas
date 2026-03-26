@@ -297,8 +297,7 @@ const Products = () => {
       const newStock = parseInt(formData.stock);
       
       if (editingProduct) {
-        const hasBatches = (batchCounts[editingProduct.id] || 0) > 0;
-        // Para edición, NO actualizar stock directamente
+        // Para edición, NO actualizar stock directamente ni cost (lo calcula el trigger)
         const productData: Record<string, any> = {
           name: formData.name,
           price: parseFloat(formData.price),
@@ -307,10 +306,6 @@ const Products = () => {
           barcode: formData.barcode || null,
           category: formData.category || null,
         };
-        // Solo incluir cost si NO tiene lotes activos (el trigger lo calcula)
-        if (!hasBatches) {
-          productData.cost = parseFloat(formData.cost);
-        }
 
         const { error } = await supabase
           .from("products")
@@ -320,6 +315,7 @@ const Products = () => {
         if (error) throw error;
 
         // Solo ajustar stock manualmente si NO tiene lotes activos
+        const hasBatches = (batchCounts[editingProduct.id] || 0) > 0;
         if (!hasBatches) {
           // Si el stock cambió, crear movimiento de inventario
           // Obtener balance actual y aplicar ajuste absoluto
@@ -585,31 +581,16 @@ const Products = () => {
                     </div>
                     {editingProduct && (
                       <div className="space-y-2">
-                        <Label htmlFor="cost">Costo *</Label>
-                        {(batchCounts[editingProduct.id] || 0) > 0 ? (
-                          <>
-                            <Input
-                              id="cost"
-                              type="number"
-                              step="0.01"
-                              value={formData.cost}
-                              disabled
-                              className="bg-muted"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Calculado automáticamente desde lotes activos
-                            </p>
-                          </>
-                        ) : (
-                          <Input
-                            id="cost"
-                            type="number"
-                            step="0.01"
-                            value={formData.cost}
-                            onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                            required
-                          />
-                        )}
+                        <Label>Costo promedio</Label>
+                        <Input
+                          type="number"
+                          value={formData.cost}
+                          disabled
+                          className="bg-muted cursor-not-allowed"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Calculado automáticamente desde lotes activos
+                        </p>
                       </div>
                     )}
                   </div>
