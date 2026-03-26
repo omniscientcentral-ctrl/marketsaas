@@ -297,16 +297,20 @@ const Products = () => {
       const newStock = parseInt(formData.stock);
       
       if (editingProduct) {
+        const hasBatches = (batchCounts[editingProduct.id] || 0) > 0;
         // Para edición, NO actualizar stock directamente
-        const productData = {
+        const productData: Record<string, any> = {
           name: formData.name,
           price: parseFloat(formData.price),
-          cost: parseFloat(formData.cost),
           stock: newStock,
           min_stock: parseInt(formData.min_stock),
           barcode: formData.barcode || null,
           category: formData.category || null,
         };
+        // Solo incluir cost si NO tiene lotes activos (el trigger lo calcula)
+        if (!hasBatches) {
+          productData.cost = parseFloat(formData.cost);
+        }
 
         const { error } = await supabase
           .from("products")
