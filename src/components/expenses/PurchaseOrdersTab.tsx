@@ -6,7 +6,7 @@ import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import PurchaseOrderDialog from "./PurchaseOrderDialog";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -26,6 +26,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const cameFromPOS = searchParams.get("from") === "pos";
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
@@ -39,7 +40,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchase_orders")
-        .select("*, supplier:suppliers(name), items:purchase_order_items(id, product_name, quantity, unit_cost, expiration_date)")
+        .select("*, supplier:suppliers(name), items:purchase_order_items(id, product_id, product_name, quantity, unit_cost, expiration_date)")
         .eq("empresa_id", empresaId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -49,6 +50,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
 
   const handleDialogClose = (refresh?: boolean) => {
     setDialogOpen(false);
+    setEditingOrder(null);
     if (refresh) {
       queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
     }
@@ -57,11 +59,16 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     }
   };
 
+  const handleEdit = (order: any) => {
+    setEditingOrder(order);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">Órdenes de Compra</h2>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={() => { setEditingOrder(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Nueva Orden
         </Button>
       </div>
@@ -83,6 +90,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                 <TableHead>Items</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="w-[60px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -98,6 +106,11 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                     <TableCell>
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(order)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -106,7 +119,12 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
         </div>
       )}
 
-      <PurchaseOrderDialog open={dialogOpen} onClose={handleDialogClose} empresaId={empresaId} />
+      <PurchaseOrderDialog
+        open={dialogOpen}
+        onClose={handleDialogClose}
+        empresaId={empresaId}
+        editingOrder={editingOrder}
+      />
     </div>
   );
 };

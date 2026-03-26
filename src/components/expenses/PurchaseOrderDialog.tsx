@@ -22,9 +22,10 @@ interface Props {
   open: boolean;
   onClose: (refresh?: boolean) => void;
   empresaId: string | null;
+  editingOrder?: any;
 }
 
-const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
+const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) => {
   const { user } = useAuth();
   const [supplierId, setSupplierId] = useState("");
   const [orderDate, setOrderDate] = useState(new Date().toISOString().split("T")[0]);
@@ -34,12 +35,29 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string; cost: number | null }[]>([]);
 
+  const isEditing = !!editingOrder;
+
   useEffect(() => {
     if (open && empresaId) {
       loadData();
-      resetForm();
+      if (editingOrder) {
+        setSupplierId(editingOrder.supplier_id);
+        setOrderDate(editingOrder.order_date);
+        setNotes(editingOrder.notes || "");
+        setItems(
+          (editingOrder.items || []).map((i: any) => ({
+            product_id: i.product_id,
+            product_name: i.product_name,
+            quantity: Number(i.quantity),
+            unit_cost: Number(i.unit_cost),
+            expiration_date: i.expiration_date || "",
+          }))
+        );
+      } else {
+        resetForm();
+      }
     }
-  }, [open, empresaId]);
+  }, [open, empresaId, editingOrder]);
 
   const loadData = async () => {
     if (!empresaId) return;
@@ -118,7 +136,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
 
       if (orderError) throw orderError;
 
-      // 2. Insert order items
+      // 2. Insert order items (NO incluir subtotal — es columna GENERATED)
       const orderItems = validItems.map((i) => ({
         purchase_order_id: order.id,
         product_id: i.product_id,
@@ -161,6 +179,25 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
       });
       if (expenseError) throw expenseError;
 
+      // 5. Sync product_stock_balance
+      for (const item of validItems) {
+        const { data: updatedProduct } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", item.product_id)
+          .single();
+        if (updatedProduct) {
+          await supabase.from("product_stock_balance").upsert(
+            {
+              product_id: item.product_id,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+        }
+      }
+
       toast.success("Orden de compra registrada");
       onClose(true);
     } catch (error: any) {
@@ -171,11 +208,146 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
     }
   };
 
+  const handleUpdate = async () => {
+    if (!supplierId) {
+      toast.error("Seleccioná un proveedor");
+      return;
+    }
+    const validItems = items.filter((i) => i.product_id && Number(i.quantity) > 0);
+    if (validItems.length === 0) {
+      toast.error("Agregá al menos un producto con cantidad mayor a 0");
+      return;
+    }
+    if (!empresaId || !user || !editingOrder) return;
+
+    setLoading(true);
+    try {
+      const batchTag = `OC-${editingOrder.order_number}`;
+      const expenseTag = `Orden de compra #${editingOrder.order_number}`;
+
+      // 0. Verificar que no haya lotes consumidos parcialmente
+      const { data: existingBatches } = await supabase
+        .from("product_batches")
+        .select("id, quantity, initial_quantity, product_id")
+        .eq("batch_number", batchTag)
+        .eq("empresa_id", empresaId);
+
+      if (existingBatches?.some((b) => Number(b.quantity) < Number(b.initial_quantity))) {
+        toast.error("No se puede editar — esta orden tiene lotes con stock ya consumido");
+        setLoading(false);
+        return;
+      }
+
+      // Collect all affected product IDs (old + new) for stock sync later
+      const oldProductIds = (existingBatches || []).map((b) => b.product_id);
+      const newProductIds = validItems.map((i) => i.product_id);
+      const allAffectedProductIds = [...new Set([...oldProductIds, ...newProductIds])];
+
+      // 1. Update purchase order header
+      const { error: orderError } = await supabase
+        .from("purchase_orders")
+        .update({
+          supplier_id: supplierId,
+          order_date: orderDate,
+          notes: notes || null,
+          total,
+        })
+        .eq("id", editingOrder.id);
+      if (orderError) throw orderError;
+
+      // 2. Delete old items and insert new ones (subtotal es GENERATED — no incluir)
+      const { error: deleteItemsError } = await supabase
+        .from("purchase_order_items")
+        .delete()
+        .eq("purchase_order_id", editingOrder.id);
+      if (deleteItemsError) throw deleteItemsError;
+
+      const { error: insertItemsError } = await supabase
+        .from("purchase_order_items")
+        .insert(
+          validItems.map((i) => ({
+            purchase_order_id: editingOrder.id,
+            product_id: i.product_id,
+            product_name: i.product_name,
+            quantity: Number(i.quantity),
+            unit_cost: Number(i.unit_cost),
+            expiration_date: i.expiration_date || null,
+          })) as any
+        );
+      if (insertItemsError) throw insertItemsError;
+
+      // 3. Reconciliar lotes: borrar viejos y crear nuevos
+      const { error: deleteBatchError } = await supabase
+        .from("product_batches")
+        .delete()
+        .eq("batch_number", batchTag)
+        .eq("empresa_id", empresaId);
+      if (deleteBatchError) throw deleteBatchError;
+
+      const { error: insertBatchError } = await supabase
+        .from("product_batches")
+        .insert(
+          validItems.map((i) => ({
+            product_id: i.product_id,
+            empresa_id: empresaId,
+            supplier_id: supplierId,
+            quantity: Number(i.quantity),
+            initial_quantity: Number(i.quantity),
+            cost: Number(i.unit_cost),
+            expiration_date: i.expiration_date || "2099-12-31",
+            batch_number: batchTag,
+            status: "active",
+            created_by: user.id,
+          }))
+        );
+      if (insertBatchError) throw insertBatchError;
+
+      // 4. Actualizar gasto vinculado (eq exacto por notes)
+      const { error: expenseError } = await supabase
+        .from("expenses")
+        .update({
+          supplier_id: supplierId,
+          amount: total,
+          expense_date: orderDate,
+        })
+        .eq("notes", expenseTag)
+        .eq("empresa_id", empresaId);
+      if (expenseError) throw expenseError;
+
+      // 5. Sincronizar product_stock_balance para todos los productos afectados
+      for (const productId of allAffectedProductIds) {
+        const { data: updatedProduct } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", productId)
+          .single();
+        if (updatedProduct) {
+          await supabase.from("product_stock_balance").upsert(
+            {
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+            },
+            { onConflict: "product_id" }
+          );
+        }
+      }
+
+      toast.success("Orden de compra actualizada");
+      onClose(true);
+    } catch (error: any) {
+      console.error("Error updating purchase order:", error);
+      toast.error("Error al actualizar la orden: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nueva Orden de Compra</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Orden de Compra" : "Nueva Orden de Compra"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -280,8 +452,8 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId }: Props) => {
           <Button variant="outline" onClick={() => onClose()} disabled={loading}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Guardando..." : "Guardar Orden"}
+          <Button onClick={isEditing ? handleUpdate : handleSubmit} disabled={loading}>
+            {loading ? "Guardando..." : isEditing ? "Actualizar Orden" : "Guardar Orden"}
           </Button>
         </DialogFooter>
       </DialogContent>
