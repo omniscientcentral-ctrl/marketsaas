@@ -378,7 +378,7 @@ const Products = () => {
         const productData = {
           name: formData.name,
           price: parseFloat(formData.price),
-          cost: parseFloat(formData.cost),
+          cost: 0,
           stock: 0,
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
