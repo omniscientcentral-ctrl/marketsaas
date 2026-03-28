@@ -28,6 +28,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [detailOrder, setDetailOrder] = useState<any>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
