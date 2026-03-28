@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil } from "lucide-react";
 import PurchaseOrderDialog from "./PurchaseOrderDialog";
+import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
