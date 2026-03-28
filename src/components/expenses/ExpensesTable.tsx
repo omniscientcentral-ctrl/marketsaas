@@ -206,6 +206,10 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetail(expense)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver detalle
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(expense)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
