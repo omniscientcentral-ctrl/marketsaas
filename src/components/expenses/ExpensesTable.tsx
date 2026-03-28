@@ -30,6 +30,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Expense } from "./ExpensesTab";
 import ReceiptPreviewDialog from "./ReceiptPreviewDialog";
+import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -43,6 +45,10 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTitle, setDetailTitle] = useState("Detalle");
 
   const handleDeleteClick = (expense: Expense) => {
     setSelectedExpense(expense);
@@ -60,6 +66,52 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
   const handleViewReceipt = (url: string) => {
     setPreviewUrl(url);
     setReceiptPreviewOpen(true);
+  };
+
+  const handleViewDetail = async (expense: Expense) => {
+    setDetailOpen(true);
+    setDetailTitle(`Gasto — ${expense.supplier?.name || "Sin proveedor"}`);
+
+    if (expense.notes?.startsWith("Orden de compra #")) {
+      const orderNumber = expense.notes.replace("Orden de compra #", "").trim();
+      setDetailLoading(true);
+      try {
+        const { data: order } = await supabase
+          .from("purchase_orders")
+          .select("*, items:purchase_order_items(product_name, quantity, unit_cost, expiration_date)")
+          .eq("order_number", Number(orderNumber))
+          .maybeSingle();
+
+        setDetailData({
+          supplier_name: expense.supplier?.name || "—",
+          date: expense.expense_date,
+          total: expense.amount,
+          status: expense.payment_status,
+          notes: expense.notes,
+          items: order?.items || [],
+        });
+      } catch {
+        setDetailData({
+          supplier_name: expense.supplier?.name || "—",
+          date: expense.expense_date,
+          total: expense.amount,
+          status: expense.payment_status,
+          notes: expense.notes,
+          items: [],
+        });
+      } finally {
+        setDetailLoading(false);
+      }
+    } else {
+      setDetailData({
+        supplier_name: expense.supplier?.name || "—",
+        date: expense.expense_date,
+        total: expense.amount,
+        status: expense.payment_status,
+        notes: expense.notes,
+        items: [],
+      });
+    }
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -154,6 +206,10 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetail(expense)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver detalle
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(expense)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
@@ -197,6 +253,15 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
         open={receiptPreviewOpen}
         onClose={() => setReceiptPreviewOpen(false)}
         imageUrl={previewUrl}
+      />
+
+      {/* Detail Dialog */}
+      <PurchaseOrderDetailDialog
+        open={detailOpen}
+        onClose={() => { setDetailOpen(false); setDetailData(null); }}
+        data={detailData}
+        loading={detailLoading}
+        title={detailTitle}
       />
     </>
   );

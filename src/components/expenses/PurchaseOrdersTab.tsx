@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil } from "lucide-react";
 import PurchaseOrderDialog from "./PurchaseOrderDialog";
+import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
@@ -27,6 +28,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [detailOrder, setDetailOrder] = useState<any>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
@@ -97,7 +99,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
               {orders.map((order: any) => {
                 const status = statusConfig[order.status] || statusConfig.pending;
                 return (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className="cursor-pointer" onClick={() => setDetailOrder(order)}>
                     <TableCell className="font-medium">#{order.order_number}</TableCell>
                     <TableCell>{order.supplier?.name || "—"}</TableCell>
                     <TableCell>{order.order_date}</TableCell>
@@ -107,7 +109,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(order)}>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -124,6 +126,25 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
         onClose={handleDialogClose}
         empresaId={empresaId}
         editingOrder={editingOrder}
+      />
+
+      <PurchaseOrderDetailDialog
+        open={!!detailOrder}
+        onClose={() => setDetailOrder(null)}
+        title={detailOrder ? `Orden de Compra #${detailOrder.order_number}` : "Detalle"}
+        data={detailOrder ? {
+          supplier_name: detailOrder.supplier?.name || "—",
+          date: detailOrder.order_date,
+          total: detailOrder.total,
+          status: detailOrder.status,
+          notes: detailOrder.notes,
+          items: (detailOrder.items || []).map((i: any) => ({
+            product_name: i.product_name,
+            quantity: i.quantity,
+            unit_cost: i.unit_cost,
+            expiration_date: i.expiration_date,
+          })),
+        } : null}
       />
     </div>
   );
