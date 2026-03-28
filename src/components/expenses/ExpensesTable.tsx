@@ -45,6 +45,10 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTitle, setDetailTitle] = useState("Detalle");
 
   const handleDeleteClick = (expense: Expense) => {
     setSelectedExpense(expense);
