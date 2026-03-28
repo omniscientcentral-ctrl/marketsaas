@@ -109,7 +109,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(order)}>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </TableCell>
