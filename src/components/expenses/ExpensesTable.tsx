@@ -68,6 +68,52 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
     setReceiptPreviewOpen(true);
   };
 
+  const handleViewDetail = async (expense: Expense) => {
+    setDetailOpen(true);
+    setDetailTitle(`Gasto — ${expense.supplier?.name || "Sin proveedor"}`);
+
+    if (expense.notes?.startsWith("Orden de compra #")) {
+      const orderNumber = expense.notes.replace("Orden de compra #", "").trim();
+      setDetailLoading(true);
+      try {
+        const { data: order } = await supabase
+          .from("purchase_orders")
+          .select("*, items:purchase_order_items(product_name, quantity, unit_cost, expiration_date)")
+          .eq("order_number", Number(orderNumber))
+          .maybeSingle();
+
+        setDetailData({
+          supplier_name: expense.supplier?.name || "—",
+          date: expense.expense_date,
+          total: expense.amount,
+          status: expense.payment_status,
+          notes: expense.notes,
+          items: order?.items || [],
+        });
+      } catch {
+        setDetailData({
+          supplier_name: expense.supplier?.name || "—",
+          date: expense.expense_date,
+          total: expense.amount,
+          status: expense.payment_status,
+          notes: expense.notes,
+          items: [],
+        });
+      } finally {
+        setDetailLoading(false);
+      }
+    } else {
+      setDetailData({
+        supplier_name: expense.supplier?.name || "—",
+        date: expense.expense_date,
+        total: expense.amount,
+        status: expense.payment_status,
+        notes: expense.notes,
+        items: [],
+      });
+    }
+  };
+
   const getPaymentMethodLabel = (method: string) => {
     const labels: Record<string, string> = {
       cash: "Efectivo",
