@@ -182,10 +182,15 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
                 </TableCell>
                 <TableCell>{getPaymentMethodLabel(expense.payment_method)}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-muted-foreground">
                       {expense.invoice_number || "-"}
                     </span>
+                    {expense.notes?.startsWith("Orden de compra #") && (
+                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-700 border-blue-500/20">
+                        {expense.notes}
+                      </Badge>
+                    )}
                     {expense.receipt_url && (
                       <Button
                         variant="ghost"

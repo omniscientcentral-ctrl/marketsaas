@@ -6,7 +6,12 @@ import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import PurchaseOrderDialog from "./PurchaseOrderDialog";
 import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
 
@@ -29,6 +34,11 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [detailOrder, setDetailOrder] = useState<any>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [payingOrder, setPayingOrder] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState("transfer");
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     if (autoOpenNew) {
@@ -66,6 +76,33 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     setDialogOpen(true);
   };
 
+  const handleRegisterPayment = async () => {
+    if (!payingOrder || !empresaId) return;
+    setPaymentLoading(true);
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .update({
+          payment_method: paymentMethod,
+          payment_status: "paid",
+          expense_date: paymentDate,
+        })
+        .eq("notes", `Orden de compra #${payingOrder.order_number}`)
+        .eq("empresa_id", empresaId);
+
+      if (error) throw error;
+
+      toast.success(`Pago registrado para Orden #${payingOrder.order_number}`);
+      setPaymentDialogOpen(false);
+      setPayingOrder(null);
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    } catch (error: any) {
+      toast.error("Error al registrar el pago: " + error.message);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -92,6 +129,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                 <TableHead>Items</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Pago</TableHead>
                 <TableHead className="w-[60px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -107,6 +145,22 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                     <TableCell>${Number(order.total).toLocaleString("es-AR", { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPayingOrder(order);
+                          setPaymentMethod("transfer");
+                          setPaymentDate(new Date().toISOString().split("T")[0]);
+                          setPaymentDialogOpen(true);
+                        }}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Pagar
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
@@ -146,6 +200,46 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
           })),
         } : null}
       />
+
+      <Dialog open={paymentDialogOpen} onOpenChange={(v) => { if (!v) { setPaymentDialogOpen(false); setPayingOrder(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Pago — OC #{payingOrder?.order_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Monto</Label>
+              <Input type="number" value={payingOrder?.total || 0} disabled className="bg-muted cursor-not-allowed" />
+            </div>
+            <div className="space-y-2">
+              <Label>Método de pago</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Efectivo</SelectItem>
+                  <SelectItem value="transfer">Transferencia</SelectItem>
+                  <SelectItem value="card">Tarjeta</SelectItem>
+                  <SelectItem value="credit">Crédito</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha de pago</Label>
+              <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPaymentDialogOpen(false); setPayingOrder(null); }} disabled={paymentLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRegisterPayment} disabled={paymentLoading}>
+              {paymentLoading ? "Registrando..." : "Confirmar Pago"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
