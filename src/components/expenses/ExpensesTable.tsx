@@ -30,6 +30,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Expense } from "./ExpensesTab";
 import ReceiptPreviewDialog from "./ReceiptPreviewDialog";
+import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExpensesTableProps {
   expenses: Expense[];
