@@ -127,6 +127,25 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
         empresaId={empresaId}
         editingOrder={editingOrder}
       />
+
+      <PurchaseOrderDetailDialog
+        open={!!detailOrder}
+        onClose={() => setDetailOrder(null)}
+        title={detailOrder ? `Orden de Compra #${detailOrder.order_number}` : "Detalle"}
+        data={detailOrder ? {
+          supplier_name: detailOrder.supplier?.name || "—",
+          date: detailOrder.order_date,
+          total: detailOrder.total,
+          status: detailOrder.status,
+          notes: detailOrder.notes,
+          items: (detailOrder.items || []).map((i: any) => ({
+            product_name: i.product_name,
+            quantity: i.quantity,
+            unit_cost: i.unit_cost,
+            expiration_date: i.expiration_date,
+          })),
+        } : null}
+      />
     </div>
   );
 };

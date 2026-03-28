@@ -254,6 +254,15 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
         onClose={() => setReceiptPreviewOpen(false)}
         imageUrl={previewUrl}
       />
+
+      {/* Detail Dialog */}
+      <PurchaseOrderDetailDialog
+        open={detailOpen}
+        onClose={() => { setDetailOpen(false); setDetailData(null); }}
+        data={detailData}
+        loading={detailLoading}
+        title={detailTitle}
+      />
     </>
   );
 };
