@@ -99,7 +99,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
               {orders.map((order: any) => {
                 const status = statusConfig[order.status] || statusConfig.pending;
                 return (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className="cursor-pointer" onClick={() => setDetailOrder(order)}>
                     <TableCell className="font-medium">#{order.order_number}</TableCell>
                     <TableCell>{order.supplier?.name || "—"}</TableCell>
                     <TableCell>{order.order_date}</TableCell>
