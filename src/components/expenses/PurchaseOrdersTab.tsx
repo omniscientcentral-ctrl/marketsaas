@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Check } from "lucide-react";
+import { Plus, Pencil, Check, PackageCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -14,9 +15,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import PurchaseOrderDialog from "./PurchaseOrderDialog";
 import PurchaseOrderDetailDialog from "./PurchaseOrderDetailDialog";
+import { receivePurchaseOrder } from "@/hooks/usePurchaseOrderReception";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  pending: { label: "Borrador", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   received: { label: "Recibida", className: "bg-green-100 text-green-800 border-green-300" },
   cancelled: { label: "Cancelada", className: "bg-red-100 text-red-800 border-red-300" },
 };
@@ -27,6 +29,7 @@ interface PurchaseOrdersTabProps {
 
 const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const empresaId = useEmpresaId();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cameFromPOS = searchParams.get("from") === "pos";
@@ -39,6 +42,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const [paymentMethod, setPaymentMethod] = useState("transfer");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [receptionLoading, setReceptionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
@@ -74,6 +78,35 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const handleEdit = (order: any) => {
     setEditingOrder(order);
     setDialogOpen(true);
+  };
+
+  const handleConfirmReception = async (order: any) => {
+    if (!empresaId || !user) return;
+    setReceptionLoading(order.id);
+    try {
+      await receivePurchaseOrder({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        empresaId,
+        supplierId: order.supplier_id || (order.supplier as any)?.id,
+        orderDate: order.order_date,
+        total: Number(order.total),
+        items: (order.items || []).map((i: any) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          quantity: Number(i.quantity),
+          unit_cost: Number(i.unit_cost),
+          expiration_date: i.expiration_date || null,
+        })),
+        userId: user.id,
+      });
+      toast.success(`Orden #${order.order_number} recibida — stock y gasto actualizados`);
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    } catch (error: any) {
+      toast.error("Error al confirmar recepción: " + error.message);
+    } finally {
+      setReceptionLoading(null);
+    }
   };
 
   const handleRegisterPayment = async () => {
@@ -129,13 +162,14 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                 <TableHead>Items</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Pago</TableHead>
-                <TableHead className="w-[60px]">Acciones</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {orders.map((order: any) => {
                 const status = statusConfig[order.status] || statusConfig.pending;
+                const isPending = order.status === "pending";
+                const isReceived = order.status === "received";
                 return (
                   <TableRow key={order.id} className="cursor-pointer" onClick={() => setDetailOrder(order)}>
                     <TableCell className="font-medium">#{order.order_number}</TableCell>
@@ -147,25 +181,41 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPayingOrder(order);
-                          setPaymentMethod("transfer");
-                          setPaymentDate(new Date().toISOString().split("T")[0]);
-                          setPaymentDialogOpen(true);
-                        }}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Pagar
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {isPending && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={receptionLoading === order.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConfirmReception(order);
+                            }}
+                          >
+                            <PackageCheck className="h-4 w-4 mr-1" />
+                            {receptionLoading === order.id ? "Recibiendo..." : "Recibir"}
+                          </Button>
+                        )}
+                        {isReceived && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPayingOrder(order);
+                              setPaymentMethod("transfer");
+                              setPaymentDate(new Date().toISOString().split("T")[0]);
+                              setPaymentDialogOpen(true);
+                            }}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Pagar
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
