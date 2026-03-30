@@ -43,6 +43,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [receptionLoading, setReceptionLoading] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
