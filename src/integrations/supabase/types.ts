@@ -393,6 +393,9 @@ export type Database = {
       company_settings: {
         Row: {
           address: string | null
+          alert_days_critical: number
+          alert_days_notice: number
+          alert_days_warning: number
           cash_closure_approval_threshold: number | null
           city: string | null
           company_name: string | null
@@ -411,6 +414,9 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          alert_days_critical?: number
+          alert_days_notice?: number
+          alert_days_warning?: number
           cash_closure_approval_threshold?: number | null
           city?: string | null
           company_name?: string | null
@@ -429,6 +435,9 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          alert_days_critical?: number
+          alert_days_notice?: number
+          alert_days_warning?: number
           cash_closure_approval_threshold?: number | null
           city?: string | null
           company_name?: string | null
