@@ -133,7 +133,7 @@ export function ProductBatchesDialog({
   const startEditing = (batch: ProductBatch) => {
     setEditingBatch(batch);
     setQuantity(String(batch.quantity));
-    setExpirationDate(batch.expiration_date);
+    setExpirationDate(batch.expiration_date || "");
     setBatchNumber(batch.batch_number || "");
     setCost(batch.cost ? String(batch.cost) : "");
     setNotes(batch.notes || "");
