@@ -496,10 +496,14 @@ export function ProductBatchesDialog({
                           {batch.quantity} / {batch.initial_quantity}
                         </td>
                         <td className="p-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {format(parseISO(batch.expiration_date), "dd/MM/yyyy", { locale: es })}
-                          </div>
+                          {batch.expiration_date ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {format(parseISO(batch.expiration_date), "dd/MM/yyyy", { locale: es })}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Sin vencimiento</span>
+                          )}
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {batch.location || "—"}
