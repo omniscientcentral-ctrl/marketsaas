@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays, parseISO } from "date-fns";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
+// Default fallback — exported for backward compatibility
 export const EXPIRATION_THRESHOLDS = {
-  CRITICAL: 7,    // Rojo: ≤7 días
-  WARNING: 15,    // Naranja: 8-15 días  
-  NOTICE: 30,     // Amarillo: 16-30 días
+  CRITICAL: 7,
+  WARNING: 15,
+  NOTICE: 30,
 };
 
 export interface ExpirationInfo {
@@ -15,9 +17,39 @@ export interface ExpirationInfo {
   severity: "critical" | "warning" | "notice";
 }
 
+function useExpirationThresholds() {
+  const empresaId = useEmpresaId();
+  const [thresholds, setThresholds] = useState(EXPIRATION_THRESHOLDS);
+
+  useEffect(() => {
+    if (!empresaId) return;
+
+    const fetch = async () => {
+      const { data, error } = await supabase
+        .from("company_settings")
+        .select("alert_days_critical, alert_days_warning, alert_days_notice")
+        .eq("empresa_id", empresaId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setThresholds({
+          CRITICAL: data.alert_days_critical ?? EXPIRATION_THRESHOLDS.CRITICAL,
+          WARNING: data.alert_days_warning ?? EXPIRATION_THRESHOLDS.WARNING,
+          NOTICE: data.alert_days_notice ?? EXPIRATION_THRESHOLDS.NOTICE,
+        });
+      }
+    };
+
+    fetch();
+  }, [empresaId]);
+
+  return thresholds;
+}
+
 export function useProductExpiration(productId: string | null) {
   const [expirationInfo, setExpirationInfo] = useState<ExpirationInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const thresholds = useExpirationThresholds();
 
   useEffect(() => {
     if (!productId) {
@@ -30,7 +62,7 @@ export function useProductExpiration(productId: string | null) {
       try {
         const today = new Date();
         const futureLimit = new Date();
-        futureLimit.setDate(today.getDate() + EXPIRATION_THRESHOLDS.NOTICE);
+        futureLimit.setDate(today.getDate() + thresholds.NOTICE);
 
         const { data, error } = await supabase
           .from("product_batches")
@@ -47,11 +79,11 @@ export function useProductExpiration(productId: string | null) {
 
         if (data) {
           const daysUntil = differenceInDays(parseISO(data.expiration_date), today);
-          
+
           let severity: "critical" | "warning" | "notice" = "notice";
-          if (daysUntil <= EXPIRATION_THRESHOLDS.CRITICAL) {
+          if (daysUntil <= thresholds.CRITICAL) {
             severity = "critical";
-          } else if (daysUntil <= EXPIRATION_THRESHOLDS.WARNING) {
+          } else if (daysUntil <= thresholds.WARNING) {
             severity = "warning";
           }
 
@@ -73,7 +105,7 @@ export function useProductExpiration(productId: string | null) {
     };
 
     fetchExpirationInfo();
-  }, [productId]);
+  }, [productId, thresholds]);
 
   return { expirationInfo, loading };
 }
@@ -81,11 +113,11 @@ export function useProductExpiration(productId: string | null) {
 export function getExpirationBadgeColor(severity: "critical" | "warning" | "notice") {
   switch (severity) {
     case "critical":
-      return "destructive"; // Rojo
+      return "destructive";
     case "warning":
-      return "default"; // Naranja/Default
+      return "default";
     case "notice":
-      return "secondary"; // Amarillo
+      return "secondary";
     default:
       return "secondary";
   }
