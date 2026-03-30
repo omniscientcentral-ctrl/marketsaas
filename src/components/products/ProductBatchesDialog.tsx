@@ -204,7 +204,7 @@ export function ProductBatchesDialog({
         previous_stock: Math.max(0, currentStock - quantityValue),
         new_stock: currentStock,
         performed_by: user?.id,
-        notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""} - Vence: ${expirationDate}`,
+        notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""}${expirationDate ? ` - Vence: ${expirationDate}` : ""}`,
       });
 
       // Sincronizar product_stock_balance con el nuevo stock
