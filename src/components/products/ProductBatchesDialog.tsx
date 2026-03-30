@@ -249,11 +249,11 @@ export function ProductBatchesDialog({
   };
 
   const handleEditBatch = async () => {
-    if (!editingBatch || !quantity || !expirationDate) {
+    if (!editingBatch || !quantity) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Cantidad y fecha de vencimiento son obligatorios",
+        description: "La cantidad es obligatoria",
       });
       return;
     }
