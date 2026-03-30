@@ -483,7 +483,7 @@ export function ProductBatchesDialog({
                 </thead>
                 <tbody>
                   {batches.map((batch) => {
-                    const isExpired = differenceInDays(parseISO(batch.expiration_date), new Date()) <= 0;
+                    const isExpired = batch.expiration_date ? differenceInDays(parseISO(batch.expiration_date), new Date()) <= 0 : false;
                     const canDispose = isExpired && batch.quantity > 0 && batch.status === "active";
                     const canEdit = batch.status === "active" && batch.quantity > 0;
                     
