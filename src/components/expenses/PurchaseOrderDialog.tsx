@@ -157,7 +157,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
         quantity: Number(i.quantity),
         initial_quantity: Number(i.quantity),
         cost: Number(i.unit_cost),
-        expiration_date: i.expiration_date || "2099-12-31",
+        expiration_date: i.expiration_date || null,
         batch_number: `OC-${(order as any).order_number}`,
         status: "active",
         created_by: user.id,
