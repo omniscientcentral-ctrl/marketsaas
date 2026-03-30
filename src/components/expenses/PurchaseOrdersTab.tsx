@@ -110,6 +110,25 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     }
   };
 
+  const handleCancelOrder = async (order: any) => {
+    if (!empresaId) return;
+    setCancelLoading(order.id);
+    try {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .update({ status: "cancelled" })
+        .eq("id", order.id)
+        .eq("empresa_id", empresaId);
+      if (error) throw error;
+      toast.success(`Orden #${order.order_number} cancelada`);
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    } catch (error: any) {
+      toast.error("Error al cancelar la orden: " + error.message);
+    } finally {
+      setCancelLoading(null);
+    }
+  };
+
   const handleRegisterPayment = async () => {
     if (!payingOrder || !empresaId) return;
     setPaymentLoading(true);
