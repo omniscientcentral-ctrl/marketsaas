@@ -508,6 +508,72 @@ const SystemTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Expiration Alert Thresholds */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            Alertas de vencimiento
+          </CardTitle>
+          <CardDescription>
+            Configura los umbrales en días para las alertas de productos próximos a vencer.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-destructive font-medium">🔴 Crítico (días)</Label>
+              <Select value={String(alertCritical)} onValueChange={(v) => setAlertCritical(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {THRESHOLD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Productos que vencen en ≤ {alertCritical} días</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium" style={{ color: "hsl(var(--chart-4))" }}>🟠 Advertencia (días)</Label>
+              <Select value={String(alertWarning)} onValueChange={(v) => setAlertWarning(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {THRESHOLD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Productos que vencen entre {alertCritical + 1} y {alertWarning} días</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium" style={{ color: "hsl(var(--chart-3))" }}>🟡 Aviso (días)</Label>
+              <Select value={String(alertNotice)} onValueChange={(v) => setAlertNotice(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {THRESHOLD_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Productos que vencen entre {alertWarning + 1} y {alertNotice} días</p>
+            </div>
+          </div>
+
+          <Button onClick={handleSaveAlerts} disabled={savingAlerts}>
+            {savingAlerts ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              "Guardar umbrales"
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
