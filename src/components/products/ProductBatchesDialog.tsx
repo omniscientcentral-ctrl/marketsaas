@@ -270,7 +270,7 @@ export function ProductBatchesDialog({
         .update({
           quantity: newQuantity,
           initial_quantity: newQuantity > editingBatch.initial_quantity ? newQuantity : editingBatch.initial_quantity,
-          expiration_date: expirationDate,
+          expiration_date: expirationDate || null,
           batch_number: batchNumber || null,
           cost: cost ? parseFloat(cost) : 0,
           notes: notes || null,
