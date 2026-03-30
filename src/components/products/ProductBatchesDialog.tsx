@@ -419,8 +419,8 @@ export function ProductBatchesDialog({
     }
   };
 
-  const getExpirationBadge = (expirationDate: string) => {
-    const days = differenceInDays(parseISO(expirationDate), new Date());
+  const getExpirationBadge = (expirationDate: string | null) => {
+    if (!expirationDate) return <Badge variant="secondary">Sin vencimiento</Badge>;
     
     if (days < 0) {
       return <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Vencido</Badge>;
