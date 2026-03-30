@@ -46,15 +46,6 @@ const TABLES_TO_CLEAN = [
   "notification_audit",
 ];
 
-const THRESHOLD_OPTIONS = [
-  { value: "3", label: "3 días" },
-  { value: "5", label: "5 días" },
-  { value: "7", label: "7 días" },
-  { value: "15", label: "15 días" },
-  { value: "30", label: "30 días" },
-  { value: "45", label: "45 días" },
-  { value: "60", label: "60 días" },
-];
 
 const SystemTab = () => {
   const empresaId = useEmpresaId();
