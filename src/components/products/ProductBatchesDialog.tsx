@@ -583,13 +583,12 @@ export function ProductBatchesDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expiration">Fecha de Vencimiento *</Label>
+                  <Label htmlFor="expiration">Fecha de Vencimiento</Label>
                   <Input
                     id="expiration"
                     type="date"
                     value={expirationDate}
                     onChange={(e) => setExpirationDate(e.target.value)}
-                    required
                   />
                 </div>
 
