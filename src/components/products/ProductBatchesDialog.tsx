@@ -28,7 +28,7 @@ interface ProductBatch {
   batch_number: string | null;
   quantity: number;
   initial_quantity: number;
-  expiration_date: string;
+  expiration_date: string | null;
   received_at: string;
   cost: number;
   notes: string | null;
@@ -133,7 +133,7 @@ export function ProductBatchesDialog({
   const startEditing = (batch: ProductBatch) => {
     setEditingBatch(batch);
     setQuantity(String(batch.quantity));
-    setExpirationDate(batch.expiration_date);
+    setExpirationDate(batch.expiration_date || "");
     setBatchNumber(batch.batch_number || "");
     setCost(batch.cost ? String(batch.cost) : "");
     setNotes(batch.notes || "");
@@ -152,11 +152,11 @@ export function ProductBatchesDialog({
   };
 
   const handleAddBatch = async () => {
-    if (!quantity || !expirationDate) {
+    if (!quantity) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Cantidad y fecha de vencimiento son obligatorios",
+        description: "La cantidad es obligatoria",
       });
       return;
     }
@@ -170,7 +170,7 @@ export function ProductBatchesDialog({
         product_id: productId,
         quantity: quantityValue,
         initial_quantity: quantityValue,
-        expiration_date: expirationDate,
+        expiration_date: expirationDate || null,
         batch_number: batchNumber || null,
         cost: cost ? parseFloat(cost) : 0,
         notes: notes || null,
@@ -204,7 +204,7 @@ export function ProductBatchesDialog({
         previous_stock: Math.max(0, currentStock - quantityValue),
         new_stock: currentStock,
         performed_by: user?.id,
-        notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""} - Vence: ${expirationDate}`,
+        notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""}${expirationDate ? ` - Vence: ${expirationDate}` : ""}`,
       });
 
       // Sincronizar product_stock_balance con el nuevo stock
@@ -249,11 +249,11 @@ export function ProductBatchesDialog({
   };
 
   const handleEditBatch = async () => {
-    if (!editingBatch || !quantity || !expirationDate) {
+    if (!editingBatch || !quantity) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Cantidad y fecha de vencimiento son obligatorios",
+        description: "La cantidad es obligatoria",
       });
       return;
     }
@@ -270,7 +270,7 @@ export function ProductBatchesDialog({
         .update({
           quantity: newQuantity,
           initial_quantity: newQuantity > editingBatch.initial_quantity ? newQuantity : editingBatch.initial_quantity,
-          expiration_date: expirationDate,
+          expiration_date: expirationDate || null,
           batch_number: batchNumber || null,
           cost: cost ? parseFloat(cost) : 0,
           notes: notes || null,
@@ -419,7 +419,8 @@ export function ProductBatchesDialog({
     }
   };
 
-  const getExpirationBadge = (expirationDate: string) => {
+  const getExpirationBadge = (expirationDate: string | null) => {
+    if (!expirationDate) return <Badge variant="secondary">Sin vencimiento</Badge>;
     const days = differenceInDays(parseISO(expirationDate), new Date());
     
     if (days < 0) {
@@ -483,7 +484,7 @@ export function ProductBatchesDialog({
                 </thead>
                 <tbody>
                   {batches.map((batch) => {
-                    const isExpired = differenceInDays(parseISO(batch.expiration_date), new Date()) <= 0;
+                    const isExpired = batch.expiration_date ? differenceInDays(parseISO(batch.expiration_date), new Date()) <= 0 : false;
                     const canDispose = isExpired && batch.quantity > 0 && batch.status === "active";
                     const canEdit = batch.status === "active" && batch.quantity > 0;
                     
@@ -496,10 +497,14 @@ export function ProductBatchesDialog({
                           {batch.quantity} / {batch.initial_quantity}
                         </td>
                         <td className="p-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {format(parseISO(batch.expiration_date), "dd/MM/yyyy", { locale: es })}
-                          </div>
+                          {batch.expiration_date ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {format(parseISO(batch.expiration_date), "dd/MM/yyyy", { locale: es })}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Sin vencimiento</span>
+                          )}
                         </td>
                         <td className="p-3 text-sm text-muted-foreground">
                           {batch.location || "—"}
@@ -579,13 +584,12 @@ export function ProductBatchesDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expiration">Fecha de Vencimiento *</Label>
+                  <Label htmlFor="expiration">Fecha de Vencimiento</Label>
                   <Input
                     id="expiration"
                     type="date"
                     value={expirationDate}
                     onChange={(e) => setExpirationDate(e.target.value)}
-                    required
                   />
                 </div>
 
