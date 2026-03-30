@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Check, PackageCheck } from "lucide-react";
+import { Plus, Pencil, Check, PackageCheck, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [receptionLoading, setReceptionLoading] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (autoOpenNew) {
@@ -106,6 +107,25 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
       toast.error("Error al confirmar recepción: " + error.message);
     } finally {
       setReceptionLoading(null);
+    }
+  };
+
+  const handleCancelOrder = async (order: any) => {
+    if (!empresaId) return;
+    setCancelLoading(order.id);
+    try {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .update({ status: "cancelled" })
+        .eq("id", order.id)
+        .eq("empresa_id", empresaId);
+      if (error) throw error;
+      toast.success(`Orden #${order.order_number} cancelada`);
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    } catch (error: any) {
+      toast.error("Error al cancelar la orden: " + error.message);
+    } finally {
+      setCancelLoading(null);
     }
   };
 
@@ -194,6 +214,21 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                           >
                             <PackageCheck className="h-4 w-4 mr-1" />
                             {receptionLoading === order.id ? "Recibiendo..." : "Recibir"}
+                          </Button>
+                        )}
+                        {isPending && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={cancelLoading === order.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order);
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            {cancelLoading === order.id ? "Cancelando..." : "Cancelar"}
                           </Button>
                         )}
                         {isReceived && (
