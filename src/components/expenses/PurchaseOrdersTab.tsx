@@ -216,6 +216,21 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                             {receptionLoading === order.id ? "Recibiendo..." : "Recibir"}
                           </Button>
                         )}
+                        {isPending && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={cancelLoading === order.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order);
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            {cancelLoading === order.id ? "Cancelando..." : "Cancelar"}
+                          </Button>
+                        )}
                         {isReceived && (
                           <Button
                             variant="outline"
