@@ -170,7 +170,7 @@ export function ProductBatchesDialog({
         product_id: productId,
         quantity: quantityValue,
         initial_quantity: quantityValue,
-        expiration_date: expirationDate,
+        expiration_date: expirationDate || null,
         batch_number: batchNumber || null,
         cost: cost ? parseFloat(cost) : 0,
         notes: notes || null,
