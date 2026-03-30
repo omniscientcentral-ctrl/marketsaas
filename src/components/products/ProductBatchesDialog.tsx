@@ -28,7 +28,7 @@ interface ProductBatch {
   batch_number: string | null;
   quantity: number;
   initial_quantity: number;
-  expiration_date: string;
+  expiration_date: string | null;
   received_at: string;
   cost: number;
   notes: string | null;
