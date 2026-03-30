@@ -48,55 +48,6 @@ const TABLES_TO_CLEAN = [
 
 
 const SystemTab = () => {
-  const empresaId = useEmpresaId();
-  const [alertCritical, setAlertCritical] = useState(7);
-  const [alertWarning, setAlertWarning] = useState(15);
-  const [alertNotice, setAlertNotice] = useState(30);
-  const [savingAlerts, setSavingAlerts] = useState(false);
-
-  useEffect(() => {
-    if (!empresaId) return;
-    supabase
-      .from("company_settings")
-      .select("alert_days_critical, alert_days_warning, alert_days_notice")
-      .eq("empresa_id", empresaId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setAlertCritical(data.alert_days_critical ?? 7);
-          setAlertWarning(data.alert_days_warning ?? 15);
-          setAlertNotice(data.alert_days_notice ?? 30);
-        }
-      });
-  }, [empresaId]);
-
-  const handleSaveAlerts = async () => {
-    if (alertCritical >= alertWarning) {
-      toast.error("El umbral Crítico debe ser menor que Advertencia");
-      return;
-    }
-    if (alertWarning >= alertNotice) {
-      toast.error("El umbral Advertencia debe ser menor que Aviso");
-      return;
-    }
-    setSavingAlerts(true);
-    try {
-      const { error } = await supabase
-        .from("company_settings")
-        .update({
-          alert_days_critical: alertCritical,
-          alert_days_warning: alertWarning,
-          alert_days_notice: alertNotice,
-        })
-        .eq("empresa_id", empresaId!);
-      if (error) throw error;
-      toast.success("Umbrales de vencimiento guardados");
-    } catch (e: any) {
-      toast.error("Error al guardar: " + e.message);
-    } finally {
-      setSavingAlerts(false);
-    }
-  };
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<CleanupResult | null>(null);
   const [isRunningProducts, setIsRunningProducts] = useState(false);
