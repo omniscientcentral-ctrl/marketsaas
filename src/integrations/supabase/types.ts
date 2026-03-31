@@ -390,6 +390,53 @@ export type Database = {
           },
         ]
       }
+      cfe_logs: {
+        Row: {
+          cfe_history: Json | null
+          client_emission_id: string | null
+          created_at: string | null
+          empresa_id: string
+          estado: string | null
+          id: string
+          intento: number | null
+          payload_enviado: Json | null
+          respuesta_pymo: Json | null
+          sale_id: string | null
+        }
+        Insert: {
+          cfe_history?: Json | null
+          client_emission_id?: string | null
+          created_at?: string | null
+          empresa_id: string
+          estado?: string | null
+          id?: string
+          intento?: number | null
+          payload_enviado?: Json | null
+          respuesta_pymo?: Json | null
+          sale_id?: string | null
+        }
+        Update: {
+          cfe_history?: Json | null
+          client_emission_id?: string | null
+          created_at?: string | null
+          empresa_id?: string
+          estado?: string | null
+          id?: string
+          intento?: number | null
+          payload_enviado?: Json | null
+          respuesta_pymo?: Json | null
+          sale_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cfe_logs_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           address: string | null
@@ -598,9 +645,13 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          ciudad_recep: string | null
+          cod_pais_recep: string | null
           created_at: string | null
           credit_limit: number | null
           current_balance: number | null
+          depto_recep: string | null
+          dir_recep: string | null
           document: string | null
           empresa_id: string
           id: string
@@ -608,15 +659,22 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          requiere_factura: boolean | null
           rut: string | null
+          rzn_soc: string | null
           status: string | null
+          tipo_doc_recep: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          ciudad_recep?: string | null
+          cod_pais_recep?: string | null
           created_at?: string | null
           credit_limit?: number | null
           current_balance?: number | null
+          depto_recep?: string | null
+          dir_recep?: string | null
           document?: string | null
           empresa_id?: string
           id?: string
@@ -624,15 +682,22 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          requiere_factura?: boolean | null
           rut?: string | null
+          rzn_soc?: string | null
           status?: string | null
+          tipo_doc_recep?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          ciudad_recep?: string | null
+          cod_pais_recep?: string | null
           created_at?: string | null
           credit_limit?: number | null
           current_balance?: number | null
+          depto_recep?: string | null
+          dir_recep?: string | null
           document?: string | null
           empresa_id?: string
           id?: string
@@ -640,8 +705,11 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          requiere_factura?: boolean | null
           rut?: string | null
+          rzn_soc?: string | null
           status?: string | null
+          tipo_doc_recep?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -656,40 +724,61 @@ export type Database = {
       }
       empresas: {
         Row: {
+          ciudad_fiscal: string | null
           created_at: string | null
+          domicilio_fiscal: string | null
           email: string | null
           estado: string
           fecha_creacion: string | null
           id: string
           nombre_empresa: string
           plan: string | null
+          pymo_email: string | null
+          pymo_password_enc: string | null
+          pymo_rut: string | null
+          razon_social: string | null
           rubro: string | null
+          rut: string | null
           subdominio: string | null
           telefono: string | null
           updated_at: string | null
         }
         Insert: {
+          ciudad_fiscal?: string | null
           created_at?: string | null
+          domicilio_fiscal?: string | null
           email?: string | null
           estado?: string
           fecha_creacion?: string | null
           id?: string
           nombre_empresa?: string
           plan?: string | null
+          pymo_email?: string | null
+          pymo_password_enc?: string | null
+          pymo_rut?: string | null
+          razon_social?: string | null
           rubro?: string | null
+          rut?: string | null
           subdominio?: string | null
           telefono?: string | null
           updated_at?: string | null
         }
         Update: {
+          ciudad_fiscal?: string | null
           created_at?: string | null
+          domicilio_fiscal?: string | null
           email?: string | null
           estado?: string
           fecha_creacion?: string | null
           id?: string
           nombre_empresa?: string
           plan?: string | null
+          pymo_email?: string | null
+          pymo_password_enc?: string | null
+          pymo_rut?: string | null
+          razon_social?: string | null
           rubro?: string | null
+          rut?: string | null
           subdominio?: string | null
           telefono?: string | null
           updated_at?: string | null
@@ -1562,33 +1651,42 @@ export type Database = {
           created_at: string | null
           empresa_id: string
           id: string
+          monto_iva: number | null
+          monto_neto: number | null
           product_id: string | null
           product_name: string
           quantity: number
           sale_id: string
           subtotal: number
+          tasa_iva: number | null
           unit_price: number
         }
         Insert: {
           created_at?: string | null
           empresa_id?: string
           id?: string
+          monto_iva?: number | null
+          monto_neto?: number | null
           product_id?: string | null
           product_name: string
           quantity: number
           sale_id: string
           subtotal: number
+          tasa_iva?: number | null
           unit_price: number
         }
         Update: {
           created_at?: string | null
           empresa_id?: string
           id?: string
+          monto_iva?: number | null
+          monto_neto?: number | null
           product_id?: string | null
           product_name?: string
           quantity?: number
           sale_id?: string
           subtotal?: number
+          tasa_iva?: number | null
           unit_price?: number
         }
         Relationships: [
@@ -1659,57 +1757,99 @@ export type Database = {
       }
       sales: {
         Row: {
+          cae_number: number | null
           card_amount: number | null
           cash_amount: number | null
           cash_register_session_id: string | null
           cashier_id: string | null
+          cfe_id: string | null
+          cfe_nro: number | null
+          cfe_serie: string | null
+          client_emission_id: string | null
           created_at: string | null
           credit_amount: number | null
           customer_id: string | null
           customer_name: string | null
           empresa_id: string
+          estado_cfe: string | null
+          fecha_emision_cfe: string | null
           id: string
           notes: string | null
           payment_method: string | null
+          pdf_cfe_url: string | null
+          qr_url: string | null
           replaces_sale_id: string | null
+          requiere_cfe: boolean | null
+          respuesta_pymo: Json | null
           sale_number: number
+          security_code: string | null
+          sent_xml_hash: string | null
           status: string | null
+          tipo_cfe: string | null
           total: number
         }
         Insert: {
+          cae_number?: number | null
           card_amount?: number | null
           cash_amount?: number | null
           cash_register_session_id?: string | null
           cashier_id?: string | null
+          cfe_id?: string | null
+          cfe_nro?: number | null
+          cfe_serie?: string | null
+          client_emission_id?: string | null
           created_at?: string | null
           credit_amount?: number | null
           customer_id?: string | null
           customer_name?: string | null
           empresa_id?: string
+          estado_cfe?: string | null
+          fecha_emision_cfe?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          pdf_cfe_url?: string | null
+          qr_url?: string | null
           replaces_sale_id?: string | null
+          requiere_cfe?: boolean | null
+          respuesta_pymo?: Json | null
           sale_number?: number
+          security_code?: string | null
+          sent_xml_hash?: string | null
           status?: string | null
+          tipo_cfe?: string | null
           total: number
         }
         Update: {
+          cae_number?: number | null
           card_amount?: number | null
           cash_amount?: number | null
           cash_register_session_id?: string | null
           cashier_id?: string | null
+          cfe_id?: string | null
+          cfe_nro?: number | null
+          cfe_serie?: string | null
+          client_emission_id?: string | null
           created_at?: string | null
           credit_amount?: number | null
           customer_id?: string | null
           customer_name?: string | null
           empresa_id?: string
+          estado_cfe?: string | null
+          fecha_emision_cfe?: string | null
           id?: string
           notes?: string | null
           payment_method?: string | null
+          pdf_cfe_url?: string | null
+          qr_url?: string | null
           replaces_sale_id?: string | null
+          requiere_cfe?: boolean | null
+          respuesta_pymo?: Json | null
           sale_number?: number
+          security_code?: string | null
+          sent_xml_hash?: string | null
           status?: string | null
+          tipo_cfe?: string | null
           total?: number
         }
         Relationships: [
