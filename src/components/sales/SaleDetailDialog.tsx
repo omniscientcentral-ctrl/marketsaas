@@ -49,7 +49,7 @@ export function SaleDetailDialog({ saleId, open, onClose }: SaleDetailDialogProp
 
       const { data: sale, error: saleError } = await supabase
         .from("sales")
-        .select("*")
+        .select("id, sale_number, created_at, status, cashier_id, customer_id, customer_name, cash_register_session_id, replaces_sale_id, payment_method, cash_amount, card_amount, credit_amount, total, notes")
         .eq("id", saleId)
         .single();
 
@@ -94,13 +94,13 @@ export function SaleDetailDialog({ saleId, open, onClose }: SaleDetailDialogProp
 
       const { data: items, error: itemsError } = await supabase
         .from("sale_items")
-        .select("*")
+        .select("id, product_id, product_name, quantity, unit_price, subtotal")
         .eq("sale_id", saleId);
       if (itemsError) throw itemsError;
 
       const { data: company } = await supabase
         .from("company_settings")
-        .select("*")
+        .select("company_name, tax_id, address, city, phone, email, currency, receipt_footer, logo_url")
         .limit(1)
         .single();
 

@@ -108,7 +108,7 @@ export default function Customers() {
       const {
         data,
         error
-      } = await supabase.from("customers").select("*").order("updated_at", {
+      } = await supabase.from("customers").select("id, name, last_name, document, rut, phone, address, credit_limit, current_balance, status, notes, updated_at").order("updated_at", {
         ascending: false
       });
       if (error) throw error;
@@ -127,7 +127,7 @@ export default function Customers() {
     try {
       const {
         data: customers
-      } = await supabase.from("customers").select("*");
+      } = await supabase.from("customers").select("status, current_balance, credit_limit");
       if (customers) {
         setActiveCustomers(customers.filter(c => c.status === "active").length);
         setTotalBalance(customers.reduce((sum, c) => sum + Number(c.current_balance), 0));
@@ -360,7 +360,7 @@ export default function Customers() {
         // Fallback: fetch without join
         const { data: plainData } = await supabase
           .from("credit_payments")
-          .select("*")
+          .select("id, amount, payment_method, notes, created_at, received_by, payment_group_id")
           .eq("customer_id", customerId)
           .order("created_at", { ascending: false });
         paymentsData = plainData;
@@ -386,7 +386,7 @@ export default function Customers() {
 
       const { data: salesData } = await supabase
         .from("sales")
-        .select("*")
+        .select("id, sale_number, total, created_at, payment_method, status")
         .eq("customer_id", customerId)
         .order("created_at", { ascending: false });
 

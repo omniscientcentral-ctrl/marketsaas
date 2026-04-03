@@ -216,7 +216,7 @@ const POS = () => {
   // Cargar proveedores para el dialog de gastos
   useEffect(() => {
     const fetchSuppliers = async () => {
-      let query = supabase.from("suppliers").select("*").eq("is_active", true);
+      let query = supabase.from("suppliers").select("id, name, tax_id, phone, email, notes, is_active").eq("is_active", true);
       if (empresaId) query = query.eq("empresa_id", empresaId);
       const { data } = await query.order("name");
       if (data) setSuppliers(data as Supplier[]);
@@ -297,7 +297,7 @@ const POS = () => {
         if (redoData.customerId) {
           const { data: customer } = await supabase
             .from("customers")
-            .select("*")
+            .select("id, name, last_name, document, phone, address, credit_limit, current_balance, status")
             .eq("id", redoData.customerId)
             .single();
           if (customer) {
@@ -414,7 +414,7 @@ const POS = () => {
     try {
       const { count, error } = await supabase
         .from("pending_sales")
-        .select("*", {
+        .select("id", {
           count: "exact",
           head: true,
         })
@@ -703,7 +703,7 @@ const POS = () => {
     fetchPendingSalesCount();
     if (customerId || customerName) {
       try {
-        let query = supabase.from("customers").select("*").eq("status", "active");
+        let query = supabase.from("customers").select("id, name, last_name, document, phone, address, credit_limit, current_balance, status").eq("status", "active");
         if (customerId) {
           query = query.eq("id", customerId);
         } else {
@@ -862,7 +862,7 @@ const POS = () => {
 
     try {
       // Obtener datos de la venta
-      const { data: saleData, error: saleError } = await supabase.from("sales").select("*").eq("id", saleId).single();
+      const { data: saleData, error: saleError } = await supabase.from("sales").select("sale_number, created_at, total, payment_method, cash_amount, card_amount, credit_amount, customer_name, notes").eq("id", saleId).single();
 
       if (saleError || !saleData) {
         console.error("Error al obtener datos de venta:", saleError);
@@ -872,7 +872,7 @@ const POS = () => {
       // Obtener items de la venta
       const { data: saleItems, error: itemsError } = await supabase
         .from("sale_items")
-        .select("*")
+        .select("product_name, quantity, unit_price, subtotal")
         .eq("sale_id", saleId);
 
       if (itemsError) {
@@ -881,7 +881,7 @@ const POS = () => {
       }
 
       // Obtener configuración de la empresa
-      const { data: companySettings } = await supabase.from("company_settings").select("*").limit(1).single();
+      const { data: companySettings } = await supabase.from("company_settings").select("company_name, tax_id, address, city, phone, email, currency, receipt_footer, logo_url").limit(1).single();
 
       // Obtener nuevo balance del cliente
       const { data: updatedCustomer } = await supabase
@@ -1098,10 +1098,10 @@ const POS = () => {
 
     try {
       // 1. Obtener items de la venta original para revertir stock
-      const { data: originalItems } = await supabase.from("sale_items").select("*").eq("sale_id", originalSaleId);
+      const { data: originalItems } = await supabase.from("sale_items").select("product_id, quantity, product_name").eq("sale_id", originalSaleId);
 
       // 2. Obtener datos de la venta original
-      const { data: originalSale } = await supabase.from("sales").select("*").eq("id", originalSaleId).single();
+      const { data: originalSale } = await supabase.from("sales").select("id, sale_number, customer_id, credit_amount, status, total").eq("id", originalSaleId).single();
 
       if (!originalSale) throw new Error("Venta original no encontrada");
 
@@ -1268,7 +1268,7 @@ const POS = () => {
           notes: creditExceeded ? "credit_exceeded" : null,
           cash_register_session_id: currentSession?.id || null,
         })
-        .select()
+        .select("id")
         .single();
       if (saleError) throw saleError;
       const saleItems = cart.map((item) => ({
@@ -1409,7 +1409,7 @@ const POS = () => {
           credit_amount: paymentMethod === "credit" ? total : null,
           cash_register_session_id: currentSession?.id || null,
         })
-        .select()
+        .select("id")
         .single();
       if (saleError) throw saleError;
       const saleItems = cart.map((item) => ({
@@ -1513,7 +1513,7 @@ const POS = () => {
     if (ticketType === "no_imprimir") return;
     try {
       // Obtener configuración de la empresa
-      const { data: companySettings } = await supabase.from("company_settings").select("*").limit(1).single();
+      const { data: companySettings } = await supabase.from("company_settings").select("company_name, tax_id, address, city, phone, email, currency, receipt_footer, logo_url").limit(1).single();
 
       // Preparar datos del cliente si existe
       let customerData = null;

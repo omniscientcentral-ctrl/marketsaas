@@ -161,7 +161,7 @@ const Products = () => {
       // Obtener conteo total
       const { count, error: countErr } = await supabase
         .from("products")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("active", true)
         .eq("empresa_id", empresaId);
 
@@ -171,7 +171,7 @@ const Products = () => {
       // Obtener productos paginados
       const { data: prod, error: prodErr } = await supabase
         .from("products")
-        .select("*")
+        .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
         .eq("active", true)
         .eq("empresa_id", empresaId)
         .order("name")
@@ -207,14 +207,14 @@ const Products = () => {
         const [exactRes, partialRes] = await Promise.all([
           supabase
             .from("products")
-            .select("*")
+            .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
             .eq("active", true)
             .eq("empresa_id", empresaId)
             .eq("barcode", term)
             .limit(10),
           supabase
             .from("products")
-            .select("*")
+            .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
             .eq("active", true)
             .eq("empresa_id", empresaId)
             .or(`barcode.ilike.%${term}%,name.ilike.%${term}%,category.ilike.%${term}%`)
@@ -385,7 +385,7 @@ const Products = () => {
         const { data: newProduct, error } = await supabase
           .from("products")
           .insert(productData)
-          .select()
+          .select("id")
           .single();
 
         if (error) throw error;

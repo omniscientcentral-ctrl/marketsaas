@@ -138,7 +138,7 @@ const ProductSearchAutocomplete = ({ onSelect, disabled = false }: ProductSearch
             // Check total batch count for this product
             const { count: totalBatches } = await supabase
               .from("product_batches")
-              .select("*", { count: "exact", head: true })
+              .select("id", { count: "exact", head: true })
               .eq("product_id", product.id)
               .gt("quantity", 0);
 
@@ -218,7 +218,7 @@ const ProductSearchAutocomplete = ({ onSelect, disabled = false }: ProductSearch
       // Mantener como utilitario opcional (no se usa en montaje)
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("id, name, price, barcode, stock, min_stock, stock_disabled")
         .eq("active", true)
         .order("name")
         .limit(50);

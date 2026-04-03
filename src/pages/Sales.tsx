@@ -57,12 +57,12 @@ export default function Sales() {
       // Build base query for count
       let countQuery = supabase
         .from("sales")
-        .select("*", { count: "exact", head: true });
+        .select("id", { count: "exact", head: true });
 
       // Build base query for data
       let dataQuery = supabase
         .from("sales")
-        .select("*")
+        .select("id, created_at, sale_number, customer_name, cashier_id, total, payment_method, status")
         .order("created_at", { ascending: false });
 
       // Apply filters to both queries
