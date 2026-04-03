@@ -43,7 +43,6 @@ import { NotificationBell } from "@/components/NotificationBell";
 
 import { useNotifications } from "@/hooks/useNotifications";
 import { EXPIRATION_THRESHOLDS } from "@/hooks/useProductExpiration";
-import { generateSaleA4PDF, generateSaleTicketPDF, generateSaleDualA4PDF } from "@/lib/pdfSaleGenerator";
 import MainLayout from "@/components/layout/MainLayout";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 interface Product {
@@ -954,6 +953,7 @@ const POS = () => {
         : undefined;
 
       // Generar copias
+      const { generateSaleDualA4PDF, generateSaleTicketPDF } = await import("@/lib/pdfSaleGenerator");
       if (ticketType === "a4") {
         // Una sola hoja A4 con ambas copias (Cliente + Empresa)
         await generateSaleDualA4PDF(formattedSale, items, company);
@@ -1578,6 +1578,7 @@ const POS = () => {
         : undefined;
 
       // Generar PDF según tipo de ticket
+      const { generateSaleA4PDF, generateSaleTicketPDF } = await import("@/lib/pdfSaleGenerator");
       if (ticketType === "a4") {
         await generateSaleA4PDF(saleData, items, company);
       } else {
