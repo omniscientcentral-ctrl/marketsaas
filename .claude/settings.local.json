@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.md$|CLAUDE|cursorrules|copilot\")",
+      "Bash(xargs wc:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npm run:*)",
+      "Bash(npx vite:*)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

@@ -29,7 +29,7 @@ const AssignAdminDialog = ({ open, onOpenChange, empresaId, empresaNombre, onSuc
   });
 
   const { data: availableUsers = [] } = useQuery({
-    queryKey: ["available-users-for-admin", empresaId, open],
+    queryKey: ["available-users-for-admin", empresaId],
     enabled: open,
     queryFn: async () => {
       // Get all profiles
@@ -43,6 +43,7 @@ const AssignAdminDialog = ({ open, onOpenChange, empresaId, empresaNombre, onSuc
         (p) => p.empresa_id !== empresaId
       );
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const handleAssignExisting = async () => {

@@ -58,6 +58,7 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const selectedPlan = planes.find((p: any) => p.id === form.plan);

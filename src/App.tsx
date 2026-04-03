@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -5,24 +6,33 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { EmpresaProvider } from "./contexts/EmpresaContext";
 import { GlobalModeGuard } from "./components/GlobalModeGuard";
-
 import UpdatePrompt from "@/components/UpdatePrompt";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import POS from "./pages/POS";
-import Products from "./pages/Products";
-import Customers from "./pages/Customers";
-import Settings from "./pages/Settings";
-import Sales from "./pages/Sales";
-import CashClosure from "./pages/CashClosure";
-import CashClosureHistory from "./pages/CashClosureHistory";
-import ExpensesManagement from "./pages/ExpensesManagement";
-import Empresas from "./pages/Empresas";
-import Planes from "./pages/Planes";
-import BackupRestore from "./pages/BackupRestore";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const Auth               = lazy(() => import("./pages/Auth"));
+const Dashboard          = lazy(() => import("./pages/Dashboard"));
+const POS                = lazy(() => import("./pages/POS"));
+const Products           = lazy(() => import("./pages/Products"));
+const Customers          = lazy(() => import("./pages/Customers"));
+const Settings           = lazy(() => import("./pages/Settings"));
+const Sales              = lazy(() => import("./pages/Sales"));
+const CashClosure        = lazy(() => import("./pages/CashClosure"));
+const CashClosureHistory = lazy(() => import("./pages/CashClosureHistory"));
+const ExpensesManagement = lazy(() => import("./pages/ExpensesManagement"));
+const Empresas           = lazy(() => import("./pages/Empresas"));
+const Planes             = lazy(() => import("./pages/Planes"));
+const BackupRestore      = lazy(() => import("./pages/BackupRestore"));
+const NotFound           = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,    // 2 min — data considered fresh globally
+      gcTime: 1000 * 60 * 10,      // 10 min — keep cache in memory
+      refetchOnWindowFocus: false,  // no refetch on tab switch
+      retry: 1,                     // 1 retry instead of default 3
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,6 +42,7 @@ const App = () => (
       <UpdatePrompt />
       <BrowserRouter>
         <EmpresaProvider>
+          <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth" element={<Auth />} />
@@ -55,6 +66,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </EmpresaProvider>
       </BrowserRouter>
     </ThemeProvider>

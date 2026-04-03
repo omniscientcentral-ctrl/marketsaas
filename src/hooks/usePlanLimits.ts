@@ -20,6 +20,7 @@ export const usePlanLimits = () => {
       if (error) throw error;
       return (data as any)?.planes ?? null;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const { data: counts, isLoading: loadingCounts } = useQuery({
@@ -37,6 +38,7 @@ export const usePlanLimits = () => {
         cajas: cajasRes.count ?? 0,
       };
     },
+    staleTime: 1000 * 60 * 3,
   });
 
   if (isSuperAdmin) {

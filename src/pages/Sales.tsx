@@ -49,6 +49,7 @@ export default function Sales() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["sales", filters, currentPage],
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
@@ -137,19 +138,17 @@ export default function Sales() {
     setCurrentPage(newPage);
   };
 
-  const cashierIds = sales.map((s: any) => s.cashier_id).filter(Boolean);
-  const uniqueCashierIds = Array.from(new Set(cashierIds));
   const { data: cashierProfiles } = useQuery({
-    queryKey: ["cashier-profiles", uniqueCashierIds],
+    queryKey: ["cashier-profiles"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name")
-        .in("id", uniqueCashierIds);
+        .order("full_name");
       if (error) throw error;
       return data;
     },
-    enabled: uniqueCashierIds.length > 0,
+    staleTime: 1000 * 60 * 15,
   });
 
   const cashierMap = useMemo(() => {

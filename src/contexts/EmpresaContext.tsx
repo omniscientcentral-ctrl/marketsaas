@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -112,27 +112,28 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
     loadUserEmpresa();
   }, [user, isSuperAdmin]);
 
-  const setSelectedEmpresaId = (id: string) => {
+  const setSelectedEmpresaId = useCallback((id: string) => {
     setSelectedEmpresaIdState(id);
     localStorage.setItem("super_admin_empresa_context", id);
-  };
+  }, []);
 
-  const selectedEmpresa = isGlobalMode
-    ? null
-    : empresas.find((e) => e.id === selectedEmpresaId) || null;
+  const selectedEmpresa = useMemo(
+    () => (isGlobalMode ? null : empresas.find((e) => e.id === selectedEmpresaId) || null),
+    [isGlobalMode, empresas, selectedEmpresaId]
+  );
+
+  const contextValue = useMemo(() => ({
+    empresas,
+    selectedEmpresaId: isGlobalMode ? null : selectedEmpresaId,
+    selectedEmpresa,
+    setSelectedEmpresaId,
+    isSuperAdmin,
+    isGlobalMode,
+    loading,
+  }), [empresas, selectedEmpresaId, selectedEmpresa, setSelectedEmpresaId, isSuperAdmin, isGlobalMode, loading]);
 
   return (
-    <EmpresaContext.Provider
-      value={{
-        empresas,
-        selectedEmpresaId: isGlobalMode ? null : selectedEmpresaId,
-        selectedEmpresa,
-        setSelectedEmpresaId,
-        isSuperAdmin,
-        isGlobalMode,
-        loading,
-      }}
-    >
+    <EmpresaContext.Provider value={contextValue}>
       {children}
     </EmpresaContext.Provider>
   );

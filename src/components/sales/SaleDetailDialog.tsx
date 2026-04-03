@@ -43,6 +43,7 @@ export function SaleDetailDialog({ saleId, open, onClose }: SaleDetailDialogProp
 
   const { data: saleDetail, isLoading } = useQuery({
     queryKey: ["sale-detail", saleId],
+    staleTime: 1000 * 30,
     queryFn: async () => {
       if (!saleId) return null;
 

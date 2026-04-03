@@ -25,6 +25,7 @@ export function SalesFilters({ filters, setFilters }: SalesFiltersProps) {
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   return (

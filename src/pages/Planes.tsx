@@ -25,6 +25,7 @@ const Planes = () => {
       if (error) throw error;
       return data as Plan[];
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const { data: empresaCounts = {} } = useQuery({
@@ -40,6 +41,7 @@ const Planes = () => {
       });
       return counts;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const saveMutation = useMutation({
