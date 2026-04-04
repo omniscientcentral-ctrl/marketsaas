@@ -1,6 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -10,167 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Bell, CheckCheck, Archive, AlertTriangle, Info, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { toast } from "sonner";
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  severity: 'info' | 'warn' | 'critical';
-  read: boolean;
-  archived: boolean;
-  actor_user_id?: string;
-  actor_role?: string;
-  target_type?: string;
-  target_id?: string;
-  related_sale_id?: string;
-  related_customer_id?: string;
-  metadata?: any;
-  created_at: string;
-}
+import { useNotificationsContext, Notification } from "@/contexts/NotificationsContext";
 
 export const AdminNotificationCenter = () => {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { notifications, loading, markAsRead, markAllAsRead, archiveNotification } =
+    useNotificationsContext();
   const [filterType, setFilterType] = useState<string>("all");
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
 
-  const fetchNotifications = async () => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('id, type, title, message, severity, read, archived, actor_role, created_at, metadata')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setNotifications((data || []) as Notification[]);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      toast.error('Error al cargar notificaciones');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    fetchNotifications();
-    
-    // Realtime subscription
-    const channel = supabase
-      .channel('admin-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          setNotifications(prev => [payload.new as Notification, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      );
-
-      // Create audit
-      await supabase.from('notification_audit').insert({
-        notification_id: notificationId,
-        action: 'read',
-        performed_by: user?.id
-      });
-    } catch (error) {
-      console.error('Error marking as read:', error);
-      toast.error('Error al marcar como leída');
-    }
-  };
-
-  const markAllAsRead = async (tab: string) => {
-    try {
-      let query = supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('read', false)
-        .eq('archived', false);
-
-      if (tab === 'critical') {
-        query = query.eq('severity', 'critical');
-      } else if (tab === 'operational') {
-        query = query.in('severity', ['info', 'warn']);
-      }
-
-      const { error } = await query;
-      if (error) throw error;
-
-      await fetchNotifications();
-      toast.success('Todas las notificaciones marcadas como leídas');
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-      toast.error('Error al marcar todas como leídas');
-    }
-  };
-
-  const archiveNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ archived: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, archived: true } : n)
-      );
-
-      // Create audit
-      await supabase.from('notification_audit').insert({
-        notification_id: notificationId,
-        action: 'archived',
-        performed_by: user?.id
-      });
-
-      toast.success('Notificación archivada');
-    } catch (error) {
-      console.error('Error archiving notification:', error);
-      toast.error('Error al archivar');
-    }
-  };
-
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical':
+      case "critical":
         return <AlertCircle className="h-5 w-5 text-destructive" />;
-      case 'warn':
+      case "warn":
         return <AlertTriangle className="h-5 w-5 text-warning" />;
       default:
         return <Info className="h-5 w-5 text-primary" />;
@@ -179,41 +29,43 @@ export const AdminNotificationCenter = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical':
-        return 'destructive';
-      case 'warn':
-        return 'secondary';
+      case "critical":
+        return "destructive";
+      case "warn":
+        return "secondary";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
   const filterNotifications = (notifs: Notification[], tab: string) => {
-    let filtered = notifs.filter(n => !n.archived);
+    let filtered = notifs.filter((n) => !n.archived);
 
-    if (tab === 'critical') {
-      filtered = filtered.filter(n => n.severity === 'critical');
-    } else if (tab === 'operational') {
-      filtered = filtered.filter(n => n.severity === 'info' || n.severity === 'warn');
+    if (tab === "critical") {
+      filtered = filtered.filter((n) => n.severity === "critical");
+    } else if (tab === "operational") {
+      filtered = filtered.filter((n) => n.severity === "info" || n.severity === "warn");
     }
 
-    if (filterType !== 'all') {
-      filtered = filtered.filter(n => n.type === filterType);
+    if (filterType !== "all") {
+      filtered = filtered.filter((n) => n.type === filterType);
     }
 
-    if (filterSeverity !== 'all') {
-      filtered = filtered.filter(n => n.severity === filterSeverity);
+    if (filterSeverity !== "all") {
+      filtered = filtered.filter((n) => n.severity === filterSeverity);
     }
 
     return filtered;
   };
 
   const getCounts = () => {
-    const unarchived = notifications.filter(n => !n.archived);
+    const unarchived = notifications.filter((n) => !n.archived);
     return {
       all: unarchived.length,
-      critical: unarchived.filter(n => n.severity === 'critical' && !n.read).length,
-      operational: unarchived.filter(n => (n.severity === 'info' || n.severity === 'warn') && !n.read).length,
+      critical: unarchived.filter((n) => n.severity === "critical" && !n.read).length,
+      operational: unarchived.filter(
+        (n) => (n.severity === "info" || n.severity === "warn") && !n.read
+      ).length,
     };
   };
 
@@ -232,7 +84,7 @@ export const AdminNotificationCenter = () => {
       <ScrollArea className="h-[600px]">
         <div className="space-y-4 pr-4">
           {notifs.map((notification) => (
-            <Card key={notification.id} className={!notification.read ? 'border-primary' : ''}>
+            <Card key={notification.id} className={!notification.read ? "border-primary" : ""}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1">
@@ -248,9 +100,7 @@ export const AdminNotificationCenter = () => {
                         </Badge>
                         <Badge variant="outline">{notification.type}</Badge>
                         {notification.actor_role && (
-                          <Badge variant="outline">
-                            {notification.actor_role}
-                          </Badge>
+                          <Badge variant="outline">{notification.actor_role}</Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(notification.created_at), "PPp", { locale: es })}
@@ -339,9 +189,7 @@ export const AdminNotificationCenter = () => {
             </Select>
           </div>
         </div>
-        <CardDescription>
-          Todas las notificaciones del sistema
-        </CardDescription>
+        <CardDescription>Todas las notificaciones del sistema</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="all">
@@ -377,48 +225,36 @@ export const AdminNotificationCenter = () => {
           <TabsContent value="all">
             <div className="space-y-4">
               <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => markAllAsRead('all')}
-                >
+                <Button variant="outline" size="sm" onClick={() => markAllAsRead("all")}>
                   <CheckCheck className="h-4 w-4 mr-2" />
                   Marcar todas como leídas
                 </Button>
               </div>
-              {renderNotifications(filterNotifications(notifications, 'all'))}
+              {renderNotifications(filterNotifications(notifications, "all"))}
             </div>
           </TabsContent>
 
           <TabsContent value="critical">
             <div className="space-y-4">
               <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => markAllAsRead('critical')}
-                >
+                <Button variant="outline" size="sm" onClick={() => markAllAsRead("critical")}>
                   <CheckCheck className="h-4 w-4 mr-2" />
                   Marcar todas como leídas
                 </Button>
               </div>
-              {renderNotifications(filterNotifications(notifications, 'critical'))}
+              {renderNotifications(filterNotifications(notifications, "critical"))}
             </div>
           </TabsContent>
 
           <TabsContent value="operational">
             <div className="space-y-4">
               <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => markAllAsRead('operational')}
-                >
+                <Button variant="outline" size="sm" onClick={() => markAllAsRead("operational")}>
                   <CheckCheck className="h-4 w-4 mr-2" />
                   Marcar todas como leídas
                 </Button>
               </div>
-              {renderNotifications(filterNotifications(notifications, 'operational'))}
+              {renderNotifications(filterNotifications(notifications, "operational"))}
             </div>
           </TabsContent>
         </Tabs>

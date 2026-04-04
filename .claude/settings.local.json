@@ -7,7 +7,12 @@
       "Bash(npm run:*)",
       "Bash(npx vite:*)",
       "Bash(echo \"exit: $?\")",
-      "Bash(grep -n \"\\\\.select\\(\" /c/Users/DELL/marketsaas/src/components/*.tsx /c/Users/DELL/marketsaas/src/components/**/*.tsx)"
+      "Bash(grep -n \"\\\\.select\\(\" /c/Users/DELL/marketsaas/src/components/*.tsx /c/Users/DELL/marketsaas/src/components/**/*.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(ls node_modules/.bin/tsc*)",
+      "Bash(npm install:*)"
     ]
   }
 }

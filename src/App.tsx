@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { EmpresaProvider } from "./contexts/EmpresaContext";
+import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { GlobalModeGuard } from "./components/GlobalModeGuard";
 import UpdatePrompt from "@/components/UpdatePrompt";
 
@@ -42,6 +43,7 @@ const App = () => (
       <UpdatePrompt />
       <BrowserRouter>
         <EmpresaProvider>
+          <NotificationsProvider>
           <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -67,6 +69,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          </NotificationsProvider>
         </EmpresaProvider>
       </BrowserRouter>
     </ThemeProvider>
