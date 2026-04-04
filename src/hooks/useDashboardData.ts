@@ -253,26 +253,22 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
       if (empresaId) {
         const { data: registers } = await supabase
           .from("cash_registers")
-          .select("id, name, location, is_active")
+          .select("id, name, location, cash_register_sessions!left(opened_at, cashier_id, status)")
           .eq("empresa_id", empresaId)
-          .eq("is_active", true);
-
-        const { data: sessions } = await supabase
-          .from("cash_register_sessions")
-          .select("cash_register_id, cashier_id, opened_at, status")
-          .eq("empresa_id", empresaId)
-          .eq("status", "open");
+          .eq("is_active", true)
+          .eq("cash_register_sessions.status", "open");
 
         if (registers) {
           const result: CashRegisterStatus[] = registers.map((r) => {
-            const session = sessions?.find((s) => s.cash_register_id === r.id);
+            const sessions = (r.cash_register_sessions as Array<{ opened_at: string | null; cashier_id: string; status: string }> | null) ?? [];
+            const session = sessions[0] ?? null;
             return {
               id: r.id,
               name: r.name,
               location: r.location,
-              isOpen: !!session,
+              isOpen: sessions.length > 0,
               openByUser: null,
-              openedAt: session?.opened_at || null,
+              openedAt: session?.opened_at ?? null,
               lastDifference: null,
             };
           });
