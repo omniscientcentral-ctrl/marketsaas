@@ -52,7 +52,7 @@ const EmpresaDialog = ({ open, onOpenChange, onSave, initialData, loading }: Emp
     queryFn: async () => {
       const { data, error } = await supabase
         .from("planes")
-        .select("*")
+        .select("id, nombre, max_usuarios, max_productos, max_cajas, max_sucursales, ai_asistente, whatsapp_respuestas")
         .eq("is_active", true)
         .order("created_at", { ascending: true });
       if (error) throw error;

@@ -41,7 +41,7 @@ const PendingSalesDrawer = ({ open, onClose, onLoad }: PendingSalesDrawerProps) 
     try {
       const { data, error } = await supabase
         .from("pending_sales")
-        .select("*")
+        .select("id, created_at, customer_name, customer_id, items, total, notes")
         .eq("cashier_id", user?.id)
         .order("created_at", { ascending: false });
 

@@ -65,7 +65,7 @@ const Users = () => {
       // Obtener perfiles filtrados por empresa
       let profilesQuery = supabase
         .from("profiles")
-        .select("*")
+        .select("id, full_name, phone, pin, is_active, default_role, email")
         .order("full_name");
 
       if (empresaId) {

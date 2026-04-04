@@ -42,7 +42,7 @@ const CashRegistersTab = () => {
     try {
       let query = supabase
         .from('cash_registers')
-        .select('*')
+        .select('id, name, location, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (empresaId) {

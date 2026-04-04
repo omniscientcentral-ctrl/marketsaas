@@ -86,7 +86,7 @@ export default function CashClosure() {
       // Buscar caja abierta del usuario (si hay varias, tomar la más reciente)
       const { data: register, error: registerError } = await supabase
         .from("cash_register")
-        .select("*")
+        .select("id, cashier_id, cash_register_id, opening_amount, opened_at, status, closing_amount, expected_amount, difference, cash_denominations, card_total, credit_sales_total, cash_withdrawals, ticket_count, difference_reason, closure_type, print_type, closed_at, requires_supervisor_approval")
         .eq("cashier_id", user?.id)
         .eq("status", "open")
         .order("opened_at", { ascending: false })
@@ -137,13 +137,13 @@ export default function CashClosure() {
       // Obtener ventas en espera
       const { data: pendingSales } = await supabase
         .from("pending_sales")
-        .select("*")
+        .select("id")
         .eq("cashier_id", user?.id);
 
       // Obtener egresos
       const { data: expenses } = await supabase
         .from("cash_register_expenses")
-        .select("*")
+        .select("amount")
         .eq("cash_register_id", register.id);
 
       const totalExpenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;

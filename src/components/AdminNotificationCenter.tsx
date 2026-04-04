@@ -47,7 +47,7 @@ export const AdminNotificationCenter = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select('id, type, title, message, severity, read, archived, actor_role, created_at, metadata')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(100);

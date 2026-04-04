@@ -552,7 +552,7 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
       const { data } = await withEmpresa(
         supabase
           .from("products_expiring_soon")
-          .select("*")
+          .select("batch_id, product_id, product_name, batch_number, quantity, expiration_date, days_until_expiry")
           .gt("quantity", 0)
           .order("days_until_expiry", { ascending: true })
           .limit(20)

@@ -60,7 +60,7 @@ const ExpensesTab = () => {
   const fetchSuppliers = async () => {
     let query = supabase
       .from("suppliers")
-      .select("*")
+      .select("id, name, tax_id, phone, email, notes, is_active")
       .eq("is_active", true)
       .order("name");
 

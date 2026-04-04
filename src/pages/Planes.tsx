@@ -20,7 +20,7 @@ const Planes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("planes")
-        .select("*")
+        .select("id, nombre, descripcion, max_usuarios, max_productos, max_cajas, max_sucursales, ai_asistente, whatsapp_respuestas, is_active")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data as Plan[];

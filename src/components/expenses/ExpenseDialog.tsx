@@ -456,7 +456,7 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
         if (refresh) {
           let query = supabase
             .from("suppliers")
-            .select("*")
+            .select("id, name, tax_id, phone, email, notes, is_active")
             .order("created_at", { ascending: false })
             .limit(1);
           if (empresaId) query = query.eq("empresa_id", empresaId);

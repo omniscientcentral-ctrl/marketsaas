@@ -42,7 +42,7 @@ const CustomerSelectDialog = ({ open, onClose, onSelect, onClear }: CustomerSele
     try {
       const { data, error } = await supabase
         .from("customers")
-        .select("*")
+        .select("id, name, last_name, document, phone, address, credit_limit, current_balance, status")
         .eq("status", "active")
         .order("name");
 

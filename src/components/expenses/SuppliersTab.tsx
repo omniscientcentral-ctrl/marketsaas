@@ -34,7 +34,7 @@ const SuppliersTab = () => {
     // Get suppliers
     let suppliersQuery = supabase
       .from("suppliers")
-      .select("*")
+      .select("id, name, tax_id, phone, email, notes, is_active, created_at")
       .order("name");
 
     if (empresaId) {

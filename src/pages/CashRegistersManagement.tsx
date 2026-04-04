@@ -56,7 +56,7 @@ const CashRegistersManagement = () => {
     try {
       const { data, error } = await supabase
         .from('cash_registers')
-        .select('*')
+        .select('id, name, location, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) {

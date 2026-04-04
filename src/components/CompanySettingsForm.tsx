@@ -66,7 +66,7 @@ export default function CompanySettingsForm() {
     try {
       const { data, error } = await supabase
         .from("company_settings")
-        .select("*")
+        .select("id, company_name, address, city, phone, email, tax_id, currency, receipt_footer, stock_disabled, logo_url, cash_closure_approval_threshold")
         .eq("empresa_id", empresaId!)
         .maybeSingle();
 
