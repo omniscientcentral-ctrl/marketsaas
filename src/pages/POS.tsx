@@ -1,34 +1,14 @@
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import {
-  ShoppingCart,
-  Trash2,
-  Clock,
-  User,
-  LogOut,
-  Calendar,
-  ArrowLeft,
-  DollarSign,
-  Store,
-  PackageMinus,
-  PackagePlus,
-  RefreshCw,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import PaymentModal from "@/components/pos/PaymentModal";
 import CustomerSelectDialog from "@/components/pos/CustomerSelectDialog";
-import CustomerActionDialog from "@/components/pos/CustomerActionDialog";
 import CreditOptionsModal from "@/components/pos/CreditOptionsModal";
 import DebtPaymentModal from "@/components/pos/DebtPaymentModal";
 import PendingSalesDrawer from "@/components/pos/PendingSalesDrawer";
-import ProductSearchAutocomplete from "@/components/pos/ProductSearchAutocomplete";
 import CashRegisterSelectionModal from "@/components/pos/CashRegisterSelectionModal";
 import SupervisorPinDialog from "@/components/pos/SupervisorPinDialog";
 import { ReturnsAndLossesDialog } from "@/components/pos/ReturnsAndLossesDialog";
@@ -37,12 +17,12 @@ import ExpenseTypeDialog from "@/components/pos/ExpenseTypeDialog";
 import CashExpenseDialog from "@/components/pos/CashExpenseDialog";
 import type { Supplier } from "@/components/expenses/ExpensesTab";
 import GenericProductDialog from "@/components/pos/GenericProductDialog";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { NotificationBell } from "@/components/NotificationBell";
 import { useNotifications } from "@/hooks/useNotifications";
 import MainLayout from "@/components/layout/MainLayout";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { POSRedoBanner } from "@/components/pos/POSRedoBanner";
+import { POSHeader } from "@/components/pos/POSHeader";
+import { POSCartPanel } from "@/components/pos/POSCartPanel";
+import { POSSummaryPanel } from "@/components/pos/POSSummaryPanel";
 
 import type { CartItem, Customer } from "@/hooks/usePOSTypes";
 import { usePOSCart } from "@/hooks/usePOSCart";
@@ -499,156 +479,32 @@ const POS = () => {
   return (
     <MainLayout showBottomNav={false} defaultOpen={false} showMobileHeader={false}>
       <div className="min-h-screen bg-background">
-        {/* Banner de Rehacer venta */}
         {originalSaleId && (
-          <div className="bg-primary/15 border-b border-primary/30 px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">
-                Rehaciendo venta #{originalSaleNumber} — Al cobrar se anulará la original
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setOriginalSaleId(null);
-                setOriginalSaleNumber(null);
-                setCart([]);
-                setSelectedCustomer(null);
-                toast.info("Rehacer venta cancelado");
-              }}
-              className="text-primary hover:text-primary"
-            >
-              Cancelar
-            </Button>
-          </div>
+          <POSRedoBanner
+            saleNumber={originalSaleNumber!}
+            onCancel={() => {
+              setOriginalSaleId(null);
+              setOriginalSaleNumber(null);
+              setCart([]);
+              setSelectedCustomer(null);
+              toast.info("Rehacer venta cancelado");
+            }}
+          />
         )}
-        {/* Header */}
-        <header className="border-b bg-card">
-          <div className="px-4 py-2 flex items-center justify-between gap-4">
-            {/* Sección Izquierda: Sidebar Trigger + Badge Consolidado */}
-            <div className="flex items-center gap-3">
-              <SidebarTrigger className="-ml-1" />
 
-              <div className="flex items-center gap-2 bg-primary/15 rounded-lg px-3 py-1.5">
-                {/* Usuario */}
-                <div className="flex items-center gap-1.5">
-                  <User className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">{user?.email?.split("@")[0] || "Usuario"}</span>
-                </div>
-
-                <span className="text-primary/50">|</span>
-
-                {/* Fecha */}
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span className="text-sm">{format(currentTime, "dd/MM/yyyy", { locale: es })}</span>
-                </div>
-
-                <span className="text-primary/50">|</span>
-
-                {/* Hora */}
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-mono">{format(currentTime, "HH:mm:ss", { locale: es })}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sección Central: Botones de Acción */}
-            <div className="flex items-center gap-1">
-              {/* Botón Ventas en Espera - con badge integrado */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPendingSales(true)}
-                disabled={isPOSBlocked}
-                className={cn(
-                  "transition-colors",
-                  pendingSalesCount > 0
-                    ? "text-primary bg-primary/10 hover:bg-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
-                )}
-                aria-label={`Ventas en espera: ${pendingSalesCount}`}
-              >
-                <Clock className="h-4 w-4" />
-                {pendingSalesCount > 0 && (
-                  <Badge variant="secondary" className="ml-1.5 h-5 min-w-[20px] px-1.5 text-xs font-semibold">
-                    {pendingSalesCount}
-                  </Badge>
-                )}
-                <span className="hidden sm:inline ml-1.5">Ventas en Espera</span>
-              </Button>
-
-              {/* Separador vertical sutil */}
-              <div className="h-6 w-px bg-border mx-1" />
-
-              {/* Botón Gastos / Retiro de Caja */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowExpenseTypeDialog(true)}
-                className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                aria-label="Registrar gasto"
-              >
-                <DollarSign className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1.5">Gastos</span>
-              </Button>
-
-              {/* Separador vertical sutil */}
-              <div className="h-6 w-px bg-border mx-1" />
-
-              {/* Botón Producto Genérico */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowGenericProduct(true)}
-                disabled={isPOSBlocked}
-                className="text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                aria-label="Producto genérico (F8)"
-              >
-                <PackagePlus className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1.5">Genérico (F8)</span>
-              </Button>
-
-              {/* Separador vertical sutil */}
-              <div className="h-6 w-px bg-border mx-1" />
-              {/* Botón Mermas - con color amber sutil para indicar atención */}
-              {activeRole && ["admin", "supervisor", "cajero"].includes(activeRole) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowReturnsDialog(true)}
-                  disabled={!currentSession}
-                  className="text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                  aria-label="Registrar mermas o devoluciones"
-                >
-                  <PackageMinus className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1.5">Mermas</span>
-                </Button>
-              )}
-
-              {/* Campana de notificaciones */}
-              <NotificationBell />
-            </div>
-
-            {/* Sección Derecha: Cerrar Caja */}
-            {activeRole && ["admin", "supervisor", "cajero"].includes(activeRole) && (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleStartCashClosure}
-                disabled={!currentSession}
-                className="ml-auto"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Caja
-              </Button>
-            )}
-          </div>
-        </header>
+        <POSHeader
+          userEmail={user?.email}
+          currentTime={currentTime}
+          activeRole={activeRole}
+          isPOSBlocked={isPOSBlocked}
+          hasOpenSession={!!currentSession}
+          pendingSalesCount={pendingSalesCount}
+          onPendingSalesClick={() => setShowPendingSales(true)}
+          onExpensesClick={() => setShowExpenseTypeDialog(true)}
+          onGenericProductClick={() => setShowGenericProduct(true)}
+          onReturnsClick={() => setShowReturnsDialog(true)}
+          onCloseCashRegister={handleStartCashClosure}
+        />
 
         {/* Banner de Modo Pago de Deuda */}
         {isDebtPaymentMode && (
@@ -662,259 +518,33 @@ const POS = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-          {/* Left Panel - Search + Cart */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Search */}
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4">Búsqueda de Productos</h2>
-              <ProductSearchAutocomplete onSelect={addToCart} disabled={isPOSBlocked} />
-              {isPOSBlocked ? (
-                <p className="text-xs text-destructive mt-2">Seleccioná una caja para comenzar a trabajar</p>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Presiona F2 para buscar o escanea el código de barras
-                </p>
-              )}
-            </Card>
+          <POSCartPanel
+            cart={cart}
+            isPOSBlocked={isPOSBlocked}
+            canEditPrice={canEditPrice}
+            quantityInputs={quantityInputs}
+            addToCart={addToCart}
+            clearCart={clearCart}
+            removeFromCart={removeFromCart}
+            onQuantityChange={handleQuantityInputChange}
+            onQuantityCommit={commitQuantityInput}
+            onPriceChange={updatePrice}
+          />
 
-            {/* Cart Items */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold">Items de Venta</h2>
-                {cart.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearCart}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Vaciar
-                  </Button>
-                )}
-              </div>
-
-              {cart.length === 0 ? (
-                <div className="text-center py-12">
-                  <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-lg font-medium mb-2">No hay productos en la venta</p>
-                  <p className="text-sm text-muted-foreground">Busca y agrega productos para comenzar</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground border-b pb-2">
-                    <div className="col-span-5">Producto</div>
-                    <div className="col-span-2 text-center">Cantidad</div>
-                    <div className="col-span-2 text-right">Precio</div>
-                    <div className="col-span-2 text-right">Subtotal</div>
-                    <div className="col-span-1"></div>
-                  </div>
-
-                  {cart.map((item) => (
-                    <div
-                      key={item.product.id}
-                      className="grid grid-cols-12 gap-4 items-center py-3 border-b hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="col-span-5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium">{item.product.name}</p>
-                          {item.product.stock_disabled ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-xs"
-                            >
-                              Stock desactivado
-                            </Badge>
-                          ) : (
-                            item.product.stock - item.quantity < 0 && (
-                              <Badge variant="destructive" className="text-xs">
-                                Requiere Autorización
-                              </Badge>
-                            )
-                          )}
-                          {!item.product.stock_disabled && (
-                            <Badge
-                              variant="outline"
-                              className="bg-amber-500/10 text-amber-700 border-amber-500/20 text-xs"
-                            >
-                              Stock: {item.product.stock}
-                            </Badge>
-                          )}
-                          {item.expirationInfo && (
-                            <Badge
-                              variant={
-                                item.expirationInfo.severity === "critical"
-                                  ? "destructive"
-                                  : item.expirationInfo.severity === "warning"
-                                    ? "default"
-                                    : "secondary"
-                              }
-                              className="text-xs flex items-center gap-1"
-                            >
-                              <Clock className="h-3 w-3" />
-                              {item.expirationInfo.daysUntilExpiration <= 0
-                                ? "Vencido"
-                                : `${item.expirationInfo.daysUntilExpiration}d`}
-                            </Badge>
-                          )}
-                        </div>
-                        {item.product.barcode && (
-                          <p className="text-xs text-muted-foreground">{item.product.barcode}</p>
-                        )}
-                      </div>
-
-                      <div className="col-span-2 text-center">
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={quantityInputs[item.product.id] ?? item.quantity.toString()}
-                          onChange={(e) => handleQuantityInputChange(item.product.id, e.target.value)}
-                          onBlur={() => commitQuantityInput(item.product.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              commitQuantityInput(item.product.id);
-                            }
-                          }}
-                          className="w-16 h-8 text-center border rounded bg-background"
-                        />
-                      </div>
-
-                      <div className="col-span-2 text-right">
-                        {canEditPrice ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={item.product.price}
-                              onChange={(e) => updatePrice(item.product.id, parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8 text-right border rounded bg-background px-2"
-                              title="Editar precio"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1">
-                            <span>${item.product.price.toFixed(2)}</span>
-                            <span className="text-muted-foreground" title="Sin permiso para editar precio">
-                              🔒
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="col-span-2 text-right font-medium">
-                        ${(item.product.price * item.quantity).toFixed(2)}
-                      </div>
-
-                      <div className="col-span-1 text-right">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
-
-          {/* Right Panel - Totals + Actions */}
-          <div className="space-y-6">
-            {/* Totals */}
-            <Card className="p-6">
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Items</p>
-                  <p className="text-4xl font-bold">{getTotalItems()}</p>
-                </div>
-
-                <div className="space-y-2 pt-4 border-t">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium">${getSubtotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">IVA incluido:</span>
-                    <span className="font-medium">$0.00</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <span className="text-lg font-medium">Total:</span>
-                  <span className="text-3xl font-bold text-primary">${getTotal().toFixed(2)}</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Customer Info */}
-            {selectedCustomer && (
-              <Card className="p-4 bg-secondary/50">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium">{selectedCustomer.name}</p>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedCustomer(null)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Límite:</span>
-                    <span>${selectedCustomer.credit_limit.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Deuda:</span>
-                    <span className="text-warning">${selectedCustomer.current_balance.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Disponible:</span>
-                    <span className="text-success">
-                      ${(selectedCustomer.credit_limit - selectedCustomer.current_balance).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full h-12"
-                onClick={savePendingSale}
-                disabled={cart.length === 0 || isPOSBlocked}
-              >
-                <Clock className="mr-2 h-5 w-5" />
-                Poner en Espera (F7)
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full h-12"
-                onClick={() => setShowCustomerDialog(true)}
-                disabled={isPOSBlocked}
-              >
-                <User className="mr-2 h-5 w-5" />
-                Crédito / Fiado (F5)
-              </Button>
-
-              <Button
-                variant={isDebtPaymentMode ? "secondary" : "default"}
-                className="w-full h-14 text-lg"
-                onClick={handleF12Cobrar}
-                disabled={isF12Disabled || isPOSBlocked}
-              >
-                {isDebtPaymentMode ? (
-                  <>
-                    <DollarSign className="mr-2 h-5 w-5" />
-                    💰 Pagar Deuda (F12)
-                  </>
-                ) : (
-                  <>💸 Cobrar (F12)</>
-                )}
-              </Button>
-            </div>
-          </div>
+          <POSSummaryPanel
+            totalItems={getTotalItems()}
+            subtotal={getSubtotal()}
+            total={getTotal()}
+            selectedCustomer={selectedCustomer}
+            cartIsEmpty={cart.length === 0}
+            isPOSBlocked={isPOSBlocked}
+            isDebtPaymentMode={isDebtPaymentMode}
+            isF12Disabled={isF12Disabled}
+            onClearCustomer={() => setSelectedCustomer(null)}
+            onSavePending={savePendingSale}
+            onOpenCustomerDialog={() => setShowCustomerDialog(true)}
+            onCobrar={handleF12Cobrar}
+          />
         </div>
 
         <PaymentModal
