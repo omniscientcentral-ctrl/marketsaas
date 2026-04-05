@@ -29,6 +29,9 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
     return localStorage.getItem("pos_ticket_type") || "tickeadora";
   });
 
+  const [transferReference, setTransferReference] = useState('');
+  const [transferReferenceValid, setTransferReferenceValid] = useState(false);
+
   const handleTicketTypeChange = (value: string) => {
     setTicketType(value);
     localStorage.setItem("pos_ticket_type", value);
@@ -38,8 +41,21 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
     setReceivedAmount(total);
     setCashAmount(0);
     setCardAmount(0);
+    setTransferReference('');
+    setTransferReferenceValid(false);
     setProcessing(false);
     onClose();
+  };
+
+  const handleTransferPayment = () => {
+    if (processing) return;
+    if (!transferReference.trim()) {
+      alert('Ingrese la referencia de la transferencia');
+      return;
+    }
+    setProcessing(true);
+    onComplete('transfer', ticketType);
+    handleClose();
   };
 
   const handleCashPayment = () => {
@@ -100,7 +116,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
         </div>
 
         <Tabs defaultValue="cash" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="cash">
               <DollarSign className="h-4 w-4" />
             </TabsTrigger>
@@ -109,6 +125,9 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
             </TabsTrigger>
             <TabsTrigger value="mixed">
               <Split className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="transfer">
+              <DollarSign className="h-4 w-4" /> {/* Using same icon for now, can change */}
             </TabsTrigger>
           </TabsList>
 
@@ -221,6 +240,39 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
               <Split className="mr-2 h-5 w-5" />
               Cobrar Mixto
             </Button>
+          </TabsContent>
+
+          <TabsContent value="transfer" className="space-y-4">
+            <div className="p-4 bg-secondary rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">Total a Transferir</p>
+              <p className="text-3xl font-bold text-primary">${total.toFixed(2)}</p>
+            </div>
+
+            <div>
+              <Label htmlFor="transfer-reference">Referencia de Transferencia</Label>
+              <Input
+                id="transfer-reference"
+                value={transferReference}
+                onChange={(e) => setTransferReference(e.target.value)}
+                className="h-12"
+                placeholder="Número de referencia o autorización"
+              />
+            </div>
+
+            <Button
+              onClick={handleTransferPayment}
+              className="w-full h-12"
+              size="lg"
+              disabled={processing || !transferReference.trim()}
+            >
+              <DollarSign className="mr-2 h-5 w-5" />
+              Confirmar Transferencia
+            </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              Una vez confirmada la transferencia, el sistema registrará el pago.
+              Guarde el comprobante para sus registros.
+            </p>
           </TabsContent>
         </Tabs>
       </DialogContent>
