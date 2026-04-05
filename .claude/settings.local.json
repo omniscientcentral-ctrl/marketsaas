@@ -12,7 +12,12 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(node_modules/.bin/tsc:*)",
       "Bash(ls node_modules/.bin/tsc*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls -1t supabase/migrations/*.sql)",
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && grep -n \"payment_method.*IN\" {} | head -10')"
     ]
   }
 }
