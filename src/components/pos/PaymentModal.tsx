@@ -54,7 +54,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
       return;
     }
     setProcessing(true);
-    onComplete('transfer', ticketType);
+    onComplete('transfer', ticketType, undefined, undefined, total);
     handleClose();
   };
 

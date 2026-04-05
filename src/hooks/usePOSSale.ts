@@ -383,6 +383,7 @@ export function usePOSSale({
           cash_amount: cashAmount || (paymentMethod === "cash" ? total : null),
           card_amount: cardAmount || (paymentMethod === "card" ? total : null),
           credit_amount: paymentMethod === "credit" ? total : null,
+          transfer_amount: paymentMethod === "transfer" ? total : null,
           notes: creditExceeded ? "credit_exceeded" : null,
           cash_register_session_id: currentSession?.id || null,
         })
@@ -521,6 +522,7 @@ export function usePOSSale({
           cash_amount: cashAmount || (paymentMethod === "cash" ? total : null),
           card_amount: cardAmount || (paymentMethod === "card" ? total : null),
           credit_amount: paymentMethod === "credit" ? total : null,
+          transfer_amount: paymentMethod === "transfer" ? total : null,
           cash_register_session_id: currentSession?.id || null,
         })
         .select("id")
