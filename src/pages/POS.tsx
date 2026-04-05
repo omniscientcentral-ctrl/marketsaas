@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,111 +37,96 @@ import ExpenseTypeDialog from "@/components/pos/ExpenseTypeDialog";
 import CashExpenseDialog from "@/components/pos/CashExpenseDialog";
 import type { Supplier } from "@/components/expenses/ExpensesTab";
 import GenericProductDialog from "@/components/pos/GenericProductDialog";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { NotificationBell } from "@/components/NotificationBell";
-
 import { useNotifications } from "@/hooks/useNotifications";
-import { EXPIRATION_THRESHOLDS } from "@/hooks/useProductExpiration";
 import MainLayout from "@/components/layout/MainLayout";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  barcode: string | null;
-  stock: number;
-  min_stock: number;
-  stock_disabled?: boolean;
-}
-interface CartItem {
-  product: Product;
-  quantity: number;
-  expirationInfo?: {
-    daysUntilExpiration: number;
-    nearestExpirationDate: string;
-    quantity: number;
-    severity: "critical" | "warning" | "notice";
-  };
-}
-interface Customer {
-  id: string;
-  name: string;
-  last_name: string | null;
-  document: string | null;
-  phone: string | null;
-  address: string | null;
-  credit_limit: number;
-  current_balance: number;
-  status: string;
-}
-interface CashSession {
-  id: string;
-  cash_register_id: string;
-  cashier_id: string;
-  opening_amount: number;
-  opened_at: string;
-  status: string;
-  cash_registers: {
-    name: string;
-    location: string | null;
-  };
-}
+
+import type { CartItem, Customer } from "@/hooks/usePOSTypes";
+import { usePOSCart } from "@/hooks/usePOSCart";
+import { usePOSSession } from "@/hooks/usePOSSession";
+import { usePOSCustomer } from "@/hooks/usePOSCustomer";
+import { usePOSRedoSale } from "@/hooks/usePOSRedoSale";
+import { usePOSSale } from "@/hooks/usePOSSale";
+
 const POS = () => {
   const { user, loading, activeRole } = useAuth();
   const empresaId = useEmpresaId();
   const navigate = useNavigate();
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = sessionStorage.getItem("pos_cart");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Sincronizar cart con sessionStorage
-  useEffect(() => {
-    try {
-      if (cart.length > 0) {
-        sessionStorage.setItem("pos_cart", JSON.stringify(cart));
-      } else {
-        sessionStorage.removeItem("pos_cart");
-      }
-    } catch {
-      // storage full or unavailable
-    }
-  }, [cart]);
+  // ── Cart ──────────────────────────────────────────────────────────────────
+  const {
+    cart,
+    setCart,
+    canEditPrice,
+    quantityInputs,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    handleQuantityInputChange,
+    commitQuantityInput,
+    updatePrice,
+    addGenericProduct,
+    clearCart: clearCartItems,
+    getSubtotal,
+    getTotal,
+    getTotalItems,
+  } = usePOSCart(user?.id, activeRole);
 
-  // Efecto para actualizar la hora cada segundo
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(() => {
-    try {
-      const saved = sessionStorage.getItem("pos_customer");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  // ── Cash register session ─────────────────────────────────────────────────
+  const {
+    currentSession,
+    sessionLoading,
+    setSessionLoading,
+    showCashRegisterModal,
+    setShowCashRegisterModal,
+    checkCashRegisterSession,
+    handleSessionSelected,
+    handleChangeCashRegister,
+    loadCompanySettings,
+  } = usePOSSession(user?.id);
 
-  // Sincronizar selectedCustomer con sessionStorage
-  useEffect(() => {
-    try {
-      if (selectedCustomer) {
-        sessionStorage.setItem("pos_customer", JSON.stringify(selectedCustomer));
-      } else {
-        sessionStorage.removeItem("pos_customer");
-      }
-    } catch {}
-  }, [selectedCustomer]);
-  const [tempCustomer, setTempCustomer] = useState<Customer | null>(null);
+  // ── Customer ──────────────────────────────────────────────────────────────
+  const { selectedCustomer, setSelectedCustomer, tempCustomer, setTempCustomer } = usePOSCustomer();
+
+  // Declared before usePOSSale so its setter is in scope for onCompleteSale
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // ── Redo sale ─────────────────────────────────────────────────────────────
+  const {
+    originalSaleId,
+    originalSaleNumber,
+    setOriginalSaleId,
+    setOriginalSaleNumber,
+    cancelOriginalSale,
+  } = usePOSRedoSale(setCart, setSelectedCustomer, user?.id);
+
+  // ── Sale processing ───────────────────────────────────────────────────────
+  const {
+    isProcessingSaleRef,
+    calculateAvailableCredit,
+    notifyAdminsAboutCreditExcess,
+    printCreditReceipt,
+    completeSale,
+    completeSaleForCustomer,
+  } = usePOSSale({
+    cart,
+    selectedCustomer,
+    currentSession,
+    empresaId,
+    user,
+    originalSaleId,
+    originalSaleNumber,
+    cancelOriginalSale,
+    setCart,
+    setSelectedCustomer,
+    onCompleteSale: () => setShowPaymentModal(false),
+  });
+
+  // ── Remaining local state ─────────────────────────────────────────────────
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [showCustomerAction, setShowCustomerAction] = useState(false);
   const [showDebtPayment, setShowDebtPayment] = useState(false);
@@ -152,48 +137,29 @@ const POS = () => {
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [showExpenseTypeDialog, setShowExpenseTypeDialog] = useState(false);
   const [showCashExpenseDialog, setShowCashExpenseDialog] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showGenericProduct, setShowGenericProduct] = useState(false);
-  const [canEditPrice, setCanEditPrice] = useState(false);
-
-  // Cash register session state
-  const [currentSession, setCurrentSession] = useState<CashSession | null>(null);
-  const [showCashRegisterModal, setShowCashRegisterModal] = useState(false);
-  const [sessionLoading, setSessionLoading] = useState(true);
-
-  // Supervisor authorization for stock disabled
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showSupervisorPin, setShowSupervisorPin] = useState(false);
-  const [stockDisabled, setStockDisabled] = useState(false);
   const [pendingPaymentAction, setPendingPaymentAction] = useState<(() => void) | null>(null);
   const [productsRequiringAuth, setProductsRequiringAuth] = useState<CartItem[]>([]);
 
-  // Controles temporales de inputs de cantidad por producto
-  const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
-
-  // Estado para "Rehacer venta"
-  const [originalSaleId, setOriginalSaleId] = useState<string | null>(null);
-  const [originalSaleNumber, setOriginalSaleNumber] = useState<number | null>(null);
-
-  // Protección contra doble click / doble tecla en ventas
-  const isProcessingSaleRef = useRef(false);
   const { notifySupervisorOverride } = useNotifications();
+
+  // ── Clock ─────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // ── Auth guard + initialization ───────────────────────────────────────────
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
       return;
     }
 
-    // Cargar permiso de edición de precios
-    const fetchPricePermission = async () => {
-      if (!user?.id) return;
-      const { data } = await supabase.from("profiles").select("can_edit_price").eq("id", user.id).single();
-      setCanEditPrice(data?.can_edit_price || false);
-    };
-    if (user?.id) {
-      fetchPricePermission();
-    }
-
-    // Guard: Solo admin, supervisor, cajero y super_admin pueden acceder al POS
     const allowedRoles = ["admin", "supervisor", "cajero", "super_admin"];
     if (!loading && activeRole && !allowedRoles.includes(activeRole)) {
       toast.error("No tenés permisos para acceder al POS");
@@ -213,7 +179,7 @@ const POS = () => {
     }
   }, [user, loading, activeRole, navigate]);
 
-  // Cargar proveedores para el dialog de gastos
+  // ── Suppliers for ExpenseDialog ───────────────────────────────────────────
   useEffect(() => {
     const fetchSuppliers = async () => {
       let query = supabase.from("suppliers").select("id, name, tax_id, phone, email, notes, is_active").eq("is_active", true);
@@ -224,160 +190,7 @@ const POS = () => {
     if (user) fetchSuppliers();
   }, [user, empresaId]);
 
-  // Detectar datos de "Rehacer venta" en sessionStorage
-  useEffect(() => {
-    const loadRedoSale = async () => {
-      try {
-        const redoRaw = sessionStorage.getItem("pos_redo_sale");
-        if (!redoRaw) return;
-
-        const redoData = JSON.parse(redoRaw);
-        sessionStorage.removeItem("pos_redo_sale");
-        sessionStorage.removeItem("pos_cart");
-        sessionStorage.removeItem("pos_customer");
-
-        setOriginalSaleId(redoData.originalSaleId);
-        setOriginalSaleNumber(redoData.originalSaleNumber);
-
-        // Fetch real product data from DB
-        const productIds = redoData.items.filter((i: any) => i.product_id).map((i: any) => i.product_id);
-
-        let dbProducts: any[] = [];
-        if (productIds.length > 0) {
-          const { data } = await supabase
-            .from("products")
-            .select(
-              `
-              id, name, price, barcode, stock, min_stock, stock_disabled,
-              product_stock_balance ( current_balance )
-            `,
-            )
-            .in("id", productIds);
-          dbProducts = (data || []).map((p) => {
-            const balance = Array.isArray(p.product_stock_balance)
-              ? p.product_stock_balance[0]?.current_balance
-              : (p.product_stock_balance as any)?.current_balance;
-            return { ...p, stock: balance ?? p.stock };
-          });
-        }
-
-        const cartItems: CartItem[] = redoData.items.map((item: any) => {
-          const dbProduct = item.product_id ? dbProducts.find((p: any) => p.id === item.product_id) : null;
-
-          if (dbProduct) {
-            return {
-              product: {
-                id: dbProduct.id,
-                name: dbProduct.name,
-                price: item.unit_price, // keep original sale price
-                barcode: dbProduct.barcode,
-                stock: dbProduct.stock,
-                min_stock: dbProduct.min_stock ?? 0,
-                stock_disabled: dbProduct.stock_disabled ?? false,
-              },
-              quantity: item.quantity,
-            };
-          }
-          // Generic product fallback
-          return {
-            product: {
-              id: `generic-redo-${Date.now()}-${Math.random()}`,
-              name: item.product_name,
-              price: item.unit_price,
-              barcode: null,
-              stock: 999,
-              min_stock: 0,
-              stock_disabled: true,
-            },
-            quantity: item.quantity,
-          };
-        });
-        setCart(cartItems);
-
-        if (redoData.customerId) {
-          const { data: customer } = await supabase
-            .from("customers")
-            .select("id, name, last_name, document, phone, address, credit_limit, current_balance, status")
-            .eq("id", redoData.customerId)
-            .single();
-          if (customer) {
-            setSelectedCustomer(customer as any);
-          }
-        }
-
-        toast.info(`Venta #${redoData.originalSaleNumber} cargada. Modificá y cobrá para reemplazarla.`);
-      } catch (e) {
-        console.error("Error loading redo sale data:", e);
-      }
-    };
-    loadRedoSale();
-  }, []);
-  const checkCashRegisterSession = async () => {
-    try {
-      setSessionLoading(true);
-
-      // Buscar sesión abierta del usuario (tomar la más reciente si hay múltiples)
-      const { data: sessions, error } = await supabase
-        .from("cash_register")
-        .select(
-          `
-          id,
-          cash_register_id,
-          cashier_id,
-          opening_amount,
-          opened_at,
-          status,
-          cash_registers (name, location)
-        `,
-        )
-        .eq("cashier_id", user?.id)
-        .eq("status", "open")
-        .order("opened_at", {
-          ascending: false,
-        });
-      if (error) throw error;
-      if (sessions && sessions.length > 0) {
-        // Tomar la sesión más reciente
-        const session = sessions[0];
-        setCurrentSession(session as any);
-        setShowCashRegisterModal(false);
-
-        // Advertir si hay múltiples sesiones abiertas
-        if (sessions.length > 1) {
-          toast.warning(`Tenés ${sessions.length} sesiones de caja abiertas. Se seleccionó la más reciente.`);
-        }
-      } else {
-        // No hay sesión, mostrar modal
-        setShowCashRegisterModal(true);
-      }
-    } catch (error: any) {
-      console.error("Error checking session:", error);
-      toast.error("Error al verificar la sesión de caja");
-    } finally {
-      setSessionLoading(false);
-    }
-  };
-  const handleSessionSelected = (session: CashSession) => {
-    setCurrentSession(session);
-    setShowCashRegisterModal(false);
-    toast.success(`Trabajando en ${session.cash_registers.name}`);
-  };
-  const handleChangeCashRegister = () => {
-    setShowCashRegisterModal(true);
-  };
-  const loadCompanySettings = async () => {
-    try {
-      const { data, error } = await supabase.from("company_settings").select("stock_disabled").limit(1).maybeSingle();
-      if (error) throw error;
-      if (data) {
-        setStockDisabled(data.stock_disabled || false);
-      }
-    } catch (error: any) {
-      console.error("Error loading company settings:", error);
-    }
-  };
-
-  // Keyboard shortcuts
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "F2") {
@@ -410,6 +223,8 @@ const POS = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cart, selectedCustomer]);
+
+  // ── Helper functions ──────────────────────────────────────────────────────
   const fetchPendingSalesCount = async () => {
     try {
       const { count, error } = await supabase
@@ -425,6 +240,7 @@ const POS = () => {
       console.error("Error fetching pending sales count:", error.message);
     }
   };
+
   const handleStartCashClosure = async () => {
     if (!currentSession) {
       toast.error("No tenés una caja abierta");
@@ -432,245 +248,16 @@ const POS = () => {
     }
     navigate("/cash-closure");
   };
-  const addToCart = useCallback(
-    async (product: Product, quantity: number = 1) => {
-      // Obtener el stock real actual desde product_stock_balance
-      const { data: balanceData } = await supabase
-        .from("product_stock_balance")
-        .select("current_balance")
-        .eq("product_id", product.id)
-        .maybeSingle();
-      const currentStock = balanceData?.current_balance ?? 0;
-      const updatedProduct = {
-        ...product,
-        stock: currentStock,
-      };
 
-      // Verificar lotes próximos a vencer
-      const today = new Date();
-      const futureLimit = new Date();
-      futureLimit.setDate(today.getDate() + EXPIRATION_THRESHOLDS.NOTICE);
-      const { data: expiringBatch } = await supabase
-        .from("product_batches")
-        .select("expiration_date, quantity")
-        .eq("product_id", product.id)
-        .eq("status", "active")
-        .gt("quantity", 0)
-        .lte("expiration_date", futureLimit.toISOString())
-        .order("expiration_date")
-        .limit(1)
-        .maybeSingle();
-      let expirationInfo = undefined;
-      if (expiringBatch) {
-        const daysUntil = differenceInDays(parseISO(expiringBatch.expiration_date), today);
-        let severity: "critical" | "warning" | "notice" = "notice";
-        if (daysUntil <= EXPIRATION_THRESHOLDS.CRITICAL) {
-          severity = "critical";
-        } else if (daysUntil <= EXPIRATION_THRESHOLDS.WARNING) {
-          severity = "warning";
-        }
-        expirationInfo = {
-          daysUntilExpiration: daysUntil,
-          nearestExpirationDate: expiringBatch.expiration_date,
-          quantity: expiringBatch.quantity,
-          severity,
-        };
-
-        // Toast de advertencia sobre vencimiento
-        if (daysUntil <= 0) {
-          toast.error(`⚠️ ${product.name} tiene ${expiringBatch.quantity} unidades VENCIDAS`);
-        } else if (daysUntil <= EXPIRATION_THRESHOLDS.CRITICAL) {
-          toast.error(`⚠️ ${product.name} tiene ${expiringBatch.quantity} unidades que vencen en ${daysUntil} días`);
-        } else if (daysUntil <= EXPIRATION_THRESHOLDS.WARNING) {
-          toast.warning(`⚠️ ${product.name} tiene ${expiringBatch.quantity} unidades que vencen en ${daysUntil} días`);
-        } else {
-          toast.info(`ℹ️ ${product.name} tiene ${expiringBatch.quantity} unidades que vencen en ${daysUntil} días`);
-        }
-      }
-      let added = false;
-      setCart((prevCart) => {
-        const existingItem = prevCart.find((item) => item.product.id === updatedProduct.id);
-        if (existingItem) {
-          const newQuantity = existingItem.quantity + quantity;
-          const stockProyectado = currentStock - newQuantity;
-
-          if (!updatedProduct.stock_disabled && stockProyectado < 0) {
-            toast.error(`${updatedProduct.name}: Sin stock disponible. Stock actual: ${currentStock}`);
-            return prevCart;
-          }
-
-          if (stockProyectado < 0 && updatedProduct.stock_disabled) {
-            toast.warning(`${updatedProduct.name} quedará en stock negativo: ${stockProyectado}`);
-          } else if (currentStock > 0 && newQuantity > currentStock && !updatedProduct.stock_disabled) {
-            toast.warning(`Stock limitado: ${currentStock} disponibles`);
-          }
-          added = true;
-          return prevCart.map((item) =>
-            item.product.id === updatedProduct.id
-              ? {
-                  ...item,
-                  product: updatedProduct,
-                  quantity: newQuantity,
-                  expirationInfo,
-                }
-              : item,
-          );
-        } else {
-          const stockProyectado = currentStock - quantity;
-
-          if (!updatedProduct.stock_disabled && stockProyectado < 0) {
-            toast.error(`${updatedProduct.name}: Sin stock disponible. Stock actual: ${currentStock}`);
-            return prevCart;
-          }
-
-          if (stockProyectado < 0 && updatedProduct.stock_disabled) {
-            toast.warning(`${updatedProduct.name} quedará en stock negativo: ${stockProyectado}`);
-          } else if (quantity > currentStock && updatedProduct.stock_disabled) {
-            toast.info(`${updatedProduct.name} - Stock proyectado: ${stockProyectado}`);
-          }
-          added = true;
-          return [{ product: updatedProduct, quantity, expirationInfo }, ...prevCart];
-        }
-      });
-      if (added) {
-        toast.success(`${product.name} agregado`);
-      }
-    },
-    [activeRole],
-  );
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-  };
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart((prev) => {
-      const item = prev.find((i) => i.product.id === productId);
-      if (!item) return prev;
-      if (item.product.stock > 0 && quantity > item.product.stock) {
-        toast.warning(`Stock limitado: ${item.product.stock} disponibles`);
-      }
-      return prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i));
-    });
-  };
-
-  // Manejo de edición de cantidad (permite estados intermedios como '0' o ',')
-  const handleQuantityInputChange = (productId: string, value: string) => {
-    setQuantityInputs((prev) => ({
-      ...prev,
-      [productId]: value,
-    }));
-  };
-  const commitQuantityInput = (productId: string) => {
-    const raw = quantityInputs[productId];
-    if (raw === undefined) return; // nada que confirmar
-
-    const sanitized = raw.replace(",", ".");
-    const parsed = parseFloat(sanitized);
-    if (Number.isNaN(parsed)) {
-      // Revertir a cantidad actual en carrito
-      setQuantityInputs((prev) => {
-        const next = {
-          ...prev,
-        };
-        delete next[productId];
-        return next;
-      });
-      return;
-    }
-    if (parsed <= 0) {
-      // Evitar eliminar al escribir 0; clamplear al mínimo permitido
-      updateQuantity(productId, 0.01);
-    } else {
-      updateQuantity(productId, parsed);
-    }
-
-    // Limpiar estado temporal para volver a reflejar el valor del carrito
-    setQuantityInputs((prev) => {
-      const next = {
-        ...prev,
-      };
-      delete next[productId];
-      return next;
-    });
-  };
-  const updatePrice = async (productId: string, newPrice: number) => {
-    if (!canEditPrice) {
-      toast.error("No tenés permiso para modificar precios");
-      return;
-    }
-    const item = cart.find((i) => i.product.id === productId);
-    if (!item) return;
-    const originalPrice = item.product.price;
-    if (newPrice <= 0) {
-      toast.error("El precio debe ser mayor a 0");
-      return;
-    }
-
-    // Actualizar el precio en el carrito
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product.id === productId
-          ? {
-              ...item,
-              product: {
-                ...item.product,
-                price: newPrice,
-              },
-            }
-          : item,
-      ),
-    );
-
-    toast.success("Precio actualizado para esta venta");
-
-    // Registrar en price_override_logs (se completará con sale_id después de la venta)
-    try {
-      const { error: logError } = await supabase.from("price_override_logs").insert({
-        user_id: user?.id,
-        product_id: productId,
-        original_price: originalPrice,
-        new_price: newPrice,
-        sale_id: null, // Se actualizará cuando se complete la venta
-      });
-      if (logError) throw logError;
-    } catch (error: any) {
-      console.error("Error logging price change:", error);
-    }
-  };
-
-  const addGenericProduct = (data: { name: string; price: number; quantity: number }) => {
-    const virtualProduct: Product = {
-      id: `generic-${Date.now()}`,
-      name: data.name,
-      price: data.price,
-      barcode: null,
-      stock: 999,
-      min_stock: 0,
-      stock_disabled: true,
-    };
-    setCart((prev) => [{ product: virtualProduct, quantity: data.quantity }, ...prev]);
-    toast.success(`${data.name} agregado (genérico)`);
-  };
-
+  // Clears cart and deselects customer (wrapper that combines both hook actions)
   const clearCart = () => {
     if (cart.length === 0) return;
     if (confirm("¿Vaciar el carrito?")) {
-      setCart([]);
+      clearCartItems();
       setSelectedCustomer(null);
     }
   };
-  const getSubtotal = () => {
-    return cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  };
-  const getTotal = () => {
-    return getSubtotal(); // IVA incluido en precio
-  };
-  const getTotalItems = () => {
-    return cart.reduce((sum, item) => sum + Math.ceil(item.quantity), 0);
-  };
+
   const savePendingSale = async () => {
     if (cart.length === 0) {
       toast.error("El carrito está vacío");
@@ -690,13 +277,14 @@ const POS = () => {
       ]);
       if (error) throw error;
       toast.success("Venta guardada en espera");
-      setCart([]);
+      clearCartItems();
       setSelectedCustomer(null);
       fetchPendingSalesCount();
     } catch (error: any) {
       toast.error("Error al guardar venta: " + error.message);
     }
   };
+
   const loadPendingSale = async (items: CartItem[], customerName: string | null, customerId: string | null) => {
     setCart(items);
     setShowPendingSales(false);
@@ -721,6 +309,7 @@ const POS = () => {
       }
     }
   };
+
   const handleCustomerSelect = (customer: Customer) => {
     // Solo seleccionar/asignar cliente, NO abrir acciones
     setSelectedCustomer(customer);
@@ -728,6 +317,14 @@ const POS = () => {
     setShowCustomerDialog(false);
     toast.success(`Cliente ${customer.name} asignado`);
   };
+
+  const handleClearCustomer = () => {
+    setSelectedCustomer(null);
+    setShowCustomerDialog(false);
+    toast.success("Cliente eliminado");
+  };
+
+  // ── Payment flow ──────────────────────────────────────────────────────────
   const handleF12Cobrar = () => {
     // Verificar productos que necesitan autorización (stock_disabled = false y stock negativo)
     const needsAuthorization = cart.some((item) => {
@@ -735,9 +332,7 @@ const POS = () => {
       return !item.product.stock_disabled && stockProyectado < 0;
     });
 
-    // Si hay productos que necesitan autorización, solicitarla
     if (needsAuthorization && cart.length > 0) {
-      // Guardar los productos que requieren autorización
       const productsNeedingAuth = cart.filter((item) => {
         const stockProyectado = item.product.stock - item.quantity;
         return !item.product.stock_disabled && stockProyectado < 0;
@@ -751,10 +346,10 @@ const POS = () => {
     }
     proceedWithPayment();
   };
+
   const proceedWithPayment = () => {
     // Modo 1: Carrito CON productos → Cobrar venta
     if (cart.length > 0) {
-      // Ramificación: sin cliente vs con cliente
       if (!selectedCustomer) {
         // Sin cliente: modal de pago normal (efectivo/tarjeta/mixto)
         setShowPaymentModal(true);
@@ -777,6 +372,7 @@ const POS = () => {
     // Modo 3: Carrito vacío + Sin cliente → No hacer nada (botón deshabilitado)
     toast.error("Selecciona un cliente o agrega productos");
   };
+
   const handleSupervisorAuthSuccess = async (supervisorName?: string) => {
     // Notificar sobre los overrides autorizados
     if (productsRequiringAuth.length > 0 && supervisorName) {
@@ -791,28 +387,12 @@ const POS = () => {
     }
     setProductsRequiringAuth([]);
 
-    // Ejecutar la acción pendiente después de la autorización
     if (pendingPaymentAction) {
       pendingPaymentAction();
       setPendingPaymentAction(null);
     }
   };
-  const calculateAvailableCredit = async (customer: Customer): Promise<number> => {
-    try {
-      // Obtener ventas en espera del cliente
-      const { data: pendingSales, error } = await supabase
-        .from("pending_sales")
-        .select("total")
-        .ilike("notes", `%${customer.name}%`);
-      if (error) throw error;
-      const pendingTotal = pendingSales?.reduce((sum, sale) => sum + sale.total, 0) || 0;
-      const available = customer.credit_limit - (customer.current_balance + pendingTotal);
-      return available;
-    } catch (error) {
-      console.error("Error calculando disponible:", error);
-      return customer.credit_limit - customer.current_balance;
-    }
-  };
+
   const handleFiar = async (ticketType: string = "no_imprimir", showDebt: boolean = true) => {
     if (!tempCustomer) return;
     if (isProcessingSaleRef.current) return;
@@ -821,14 +401,11 @@ const POS = () => {
     const available = await calculateAvailableCredit(tempCustomer);
     const wouldExceed = available < total;
 
-    // Procesar venta a crédito automáticamente (sin pedir confirmación)
     setShowCustomerAction(false);
 
-    // Usar tempCustomer directamente en lugar de esperar que selectedCustomer se actualice
     try {
       const saleResult = await completeSaleForCustomer("credit", tempCustomer);
 
-      // Si se excedió el crédito, notificar a los administradores
       if (wouldExceed && saleResult?.saleId) {
         const missingAmount = total - available;
         await notifyAdminsAboutCreditExcess(tempCustomer, total, missingAmount, saleResult.saleId);
@@ -837,7 +414,6 @@ const POS = () => {
         toast.success(`Venta a crédito completada para ${tempCustomer.name}`);
       }
 
-      // Imprimir recibo con copia si se seleccionó un formato
       if (saleResult?.saleId && ticketType !== "no_imprimir") {
         await printCreditReceipt(saleResult.saleId, tempCustomer, ticketType, showDebt);
       }
@@ -851,203 +427,18 @@ const POS = () => {
     }
   };
 
-  // Función para imprimir recibos de ventas fiadas con copia empresa y cliente
-  const printCreditReceipt = async (
-    saleId: string,
-    customer: Customer,
-    ticketType: string,
-    showDebt: boolean = true,
-  ) => {
-    if (ticketType === "no_imprimir") return;
-
-    try {
-      // Obtener datos de la venta
-      const { data: saleData, error: saleError } = await supabase.from("sales").select("sale_number, created_at, total, payment_method, cash_amount, card_amount, credit_amount, customer_name, notes").eq("id", saleId).single();
-
-      if (saleError || !saleData) {
-        console.error("Error al obtener datos de venta:", saleError);
-        return;
-      }
-
-      // Obtener items de la venta
-      const { data: saleItems, error: itemsError } = await supabase
-        .from("sale_items")
-        .select("product_name, quantity, unit_price, subtotal")
-        .eq("sale_id", saleId);
-
-      if (itemsError) {
-        console.error("Error al obtener items:", itemsError);
-        return;
-      }
-
-      // Obtener configuración de la empresa
-      const { data: companySettings } = await supabase.from("company_settings").select("company_name, tax_id, address, city, phone, email, currency, receipt_footer, logo_url").limit(1).single();
-
-      // Obtener nuevo balance del cliente
-      const { data: updatedCustomer } = await supabase
-        .from("customers")
-        .select("current_balance")
-        .eq("id", customer.id)
-        .single();
-
-      // Preparar datos de la caja
-      const cashRegisterData = currentSession
-        ? {
-            name: currentSession.cash_registers?.name || "N/A",
-            location: currentSession.cash_registers?.location,
-          }
-        : null;
-
-      // Preparar datos del cliente con balance actualizado
-      const customerData = {
-        name: customer.name,
-        last_name: customer.last_name,
-        document: customer.document,
-        rut: null,
-        phone: customer.phone,
-        address: customer.address,
-        current_balance: showDebt ? (updatedCustomer?.current_balance ?? customer.current_balance) : undefined,
-      };
-
-      // Preparar datos de la venta
-      const formattedSale = {
-        sale_number: saleData.sale_number,
-        created_at: saleData.created_at,
-        total: saleData.total,
-        payment_method: saleData.payment_method,
-        cash_amount: saleData.cash_amount,
-        card_amount: saleData.card_amount,
-        credit_amount: saleData.credit_amount,
-        customer_name: saleData.customer_name,
-        cashier: {
-          full_name: user?.user_metadata?.full_name || user?.email || "N/A",
-        },
-        customer: customerData,
-        cash_register: cashRegisterData,
-        session_id: currentSession?.id,
-        notes: saleData.notes,
-        replaces_sale_number: originalSaleNumber || undefined,
-      };
-
-      // Preparar items
-      const items = (saleItems || []).map((item) => ({
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-      }));
-
-      // Preparar configuración de empresa
-      const company = companySettings
-        ? {
-            company_name: companySettings.company_name,
-            tax_id: companySettings.tax_id,
-            address: companySettings.address,
-            city: companySettings.city,
-            phone: companySettings.phone,
-            email: companySettings.email,
-            currency: companySettings.currency,
-            receipt_footer: companySettings.receipt_footer,
-            logo_url: companySettings.logo_url,
-          }
-        : undefined;
-
-      // Generar copias
-      const { generateSaleDualA4PDF, generateSaleTicketPDF } = await import("@/lib/pdfSaleGenerator");
-      if (ticketType === "a4") {
-        // Una sola hoja A4 con ambas copias (Cliente + Empresa)
-        await generateSaleDualA4PDF(formattedSale, items, company);
-      } else {
-        // Tickets: 2 tickets separados (correcto para tickeadora)
-        await generateSaleTicketPDF(formattedSale, items, company, "COPIA EMPRESA");
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await generateSaleTicketPDF(formattedSale, items, company, "COPIA CLIENTE");
-      }
-    } catch (error) {
-      console.error("Error generando recibos de crédito:", error);
-    }
-  };
-  const notifyAdminsAboutCreditExcess = async (
-    customer: Customer,
-    total: number,
-    missingAmount: number,
-    saleId: string,
-  ) => {
-    try {
-      // Obtener todos los usuarios con rol admin
-      const { data: adminRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-      if (rolesError) throw rolesError;
-      if (!adminRoles || adminRoles.length === 0) {
-        console.log("No hay administradores para notificar");
-        return;
-      }
-
-      // Obtener información del cajero actual
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user?.id).single();
-
-      // Obtener información del registro de caja activo
-      const { data: cashRegister } = await supabase
-        .from("cash_register")
-        .select("id")
-        .eq("cashier_id", user?.id)
-        .eq("status", "open")
-        .single();
-
-      // Crear notificaciones para cada admin evitando duplicados por (sale_id + type + user)
-      const adminIds = adminRoles.map((r) => r.user_id);
-      const { data: existing } = await supabase
-        .from("notifications")
-        .select("user_id")
-        .eq("type", "fiado_excedido")
-        .eq("related_sale_id", saleId)
-        .in("user_id", adminIds);
-      const alreadyNotified = new Set((existing || []).map((e: any) => e.user_id));
-      const customerFullName = [customer.name, customer.last_name].filter(Boolean).join(" ");
-      const notifications = adminIds
-        .filter((id) => !alreadyNotified.has(id))
-        .map((adminId) => ({
-          user_id: adminId,
-          type: "fiado_excedido",
-          title: "Fiado Excedido",
-          message: `${customerFullName} excedió su crédito por $${missingAmount.toFixed(2)}. Total: $${total.toFixed(2)}`,
-          related_sale_id: saleId,
-          related_customer_id: customer.id,
-          metadata: {
-            customer_name: customerFullName,
-            sale_total: total,
-            missing_amount: missingAmount,
-            customer_balance: customer.current_balance,
-            customer_limit: customer.credit_limit,
-            cashier_id: user?.id,
-            cashier_name: profile?.full_name || "Desconocido",
-            cash_register_id: cashRegister?.id,
-          },
-        }));
-      if (notifications.length === 0) return;
-      const { error: notifyError } = await supabase.from("notifications").insert(notifications);
-      if (notifyError) throw notifyError;
-      console.log("Administradores notificados sobre fiado excedido");
-    } catch (error: any) {
-      console.error("Error al notificar administradores:", error.message);
-      // No fallar la venta si falla la notificación
-    }
-  };
   const handlePayPartial = () => {
     setDebtPaymentMode("partial");
     setShowCustomerAction(false);
     setShowDebtPayment(true);
   };
+
   const handlePayTotal = () => {
     setDebtPaymentMode("total");
     setShowCustomerAction(false);
     setShowDebtPayment(true);
   };
+
   const handleDebtPaymentComplete = async (remainingBalance: number, mode: "partial" | "total") => {
     if (tempCustomer) {
       const updatedCustomer = {
@@ -1056,11 +447,9 @@ const POS = () => {
       };
       setTempCustomer(updatedCustomer);
       if (mode === "partial") {
-        // Validar si se puede completar la venta con el nuevo saldo
         const total = getTotal();
         const newAvailable = updatedCustomer.credit_limit - updatedCustomer.current_balance;
         if (newAvailable >= total) {
-          // Procesar venta a crédito automáticamente
           setSelectedCustomer(updatedCustomer);
           setShowDebtPayment(false);
           try {
@@ -1086,509 +475,8 @@ const POS = () => {
     }
     setShowDebtPayment(false);
   };
-  const handleClearCustomer = () => {
-    setSelectedCustomer(null);
-    setShowCustomerDialog(false);
-    toast.success("Cliente eliminado");
-  };
 
-  // Función para anular la venta original al rehacer
-  const cancelOriginalSale = async (newSaleId: string, newSaleNumber: number) => {
-    if (!originalSaleId) return;
-
-    try {
-      // 1. Obtener items de la venta original para revertir stock
-      const { data: originalItems } = await supabase.from("sale_items").select("product_id, quantity, product_name").eq("sale_id", originalSaleId);
-
-      // 2. Obtener datos de la venta original
-      const { data: originalSale } = await supabase.from("sales").select("id, sale_number, customer_id, credit_amount, status, total").eq("id", originalSaleId).single();
-
-      if (!originalSale) throw new Error("Venta original no encontrada");
-
-      // 3. Revertir stock de cada item
-      if (originalItems) {
-        for (const item of originalItems) {
-          if (!item.product_id) continue;
-
-          const { data: product } = await supabase
-            .from("products")
-            .select("stock, stock_disabled")
-            .eq("id", item.product_id)
-            .single();
-
-          if (!product) continue;
-
-          if (product.stock_disabled) continue;
-
-          const previousStock = product.stock;
-          const newStock = previousStock + item.quantity;
-
-          // Check if product has active batches
-          const { data: activeBatch } = await supabase
-            .from("product_batches")
-            .select("id, quantity")
-            .eq("product_id", item.product_id)
-            .eq("status", "active")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (activeBatch) {
-            // Update batch quantity; trigger will auto-sync products.stock
-            await supabase
-              .from("product_batches")
-              .update({ quantity: activeBatch.quantity + item.quantity })
-              .eq("id", activeBatch.id);
-          } else {
-            // No batches: update products.stock directly
-            await supabase.from("products").update({ stock: newStock }).eq("id", item.product_id);
-          }
-
-          // Registrar movimiento de devolución
-          await supabase.from("stock_movements").insert({
-            product_id: item.product_id,
-            movement_type: "sale_redo_return",
-            quantity: item.quantity,
-            previous_stock: previousStock,
-            new_stock: newStock,
-            reference_id: originalSaleId,
-            performed_by: user?.id,
-            notes: `Devolución por rehacer venta #${originalSaleNumber} → #${newSaleNumber}`,
-          });
-        }
-      }
-
-      // 4. Si la venta original tenía crédito, revertir crédito
-      if ((originalSale.credit_amount ?? 0) > 0 && originalSale.customer_id) {
-        // Cancelar el crédito asociado
-        await supabase.from("credits").update({ status: "cancelled", balance: 0 }).eq("sale_id", originalSaleId);
-
-        // Recalculate current_balance from actual pending credits
-        const { data: activeCredits } = await supabase
-          .from("credits")
-          .select("balance")
-          .eq("customer_id", originalSale.customer_id)
-          .in("status", ["pending", "partial"]);
-
-        const recalculatedBalance = (activeCredits || []).reduce((sum: number, c: any) => sum + (c.balance ?? 0), 0);
-
-        await supabase
-          .from("customers")
-          .update({ current_balance: recalculatedBalance })
-          .eq("id", originalSale.customer_id);
-      }
-
-      // 5. Anular la venta original
-      await (supabase as any)
-        .from("sales")
-        .update({
-          status: "cancelled",
-          notes: `Anulada y reemplazada por venta #${newSaleNumber}`,
-        })
-        .eq("id", originalSaleId);
-
-      // 6. Vincular la nueva venta con la original
-      await (supabase as any).from("sales").update({ replaces_sale_id: originalSaleId }).eq("id", newSaleId);
-
-      // Limpiar estado de redo
-      setOriginalSaleId(null);
-      setOriginalSaleNumber(null);
-    } catch (error: any) {
-      console.error("Error al anular venta original:", error);
-      toast.error("Error al anular la venta original: " + error.message);
-    }
-  };
-
-  // Versión especial para ventas a crédito con customer específico (permite exceder límite)
-  // Descontar lotes por FEFO (First Expired, First Out)
-  const deductFromBatches = async (productId: string, quantity: number) => {
-    const { data: batches } = await supabase
-      .from("product_batches")
-      .select("id, quantity")
-      .eq("product_id", productId)
-      .eq("status", "active")
-      .gt("quantity", 0)
-      .order("expiration_date", { ascending: true });
-
-    if (!batches || batches.length === 0) return;
-
-    let remaining = quantity;
-
-    for (const batch of batches) {
-      if (remaining <= 0) break;
-
-      const deduct = Math.min(batch.quantity, remaining);
-      const newQty = batch.quantity - deduct;
-
-      await supabase.from("product_batches").update({ quantity: newQty }).eq("id", batch.id);
-
-      remaining -= deduct;
-    }
-  };
-
-  const completeSaleForCustomer = async (
-    paymentMethod: string,
-    customer: Customer,
-    cashAmount?: number,
-    cardAmount?: number,
-    receivedAmount?: number,
-  ): Promise<
-    | {
-        saleId: string;
-      }
-    | undefined
-  > => {
-    if (isProcessingSaleRef.current && paymentMethod !== "credit") return;
-    if (cart.length === 0) {
-      toast.error("El carrito está vacío");
-      return;
-    }
-    if (!empresaId) {
-      toast.error("Error: no se pudo determinar la empresa. Recargue la página.");
-      return;
-    }
-    const total = getTotal();
-
-    // Determinar si excede para marcar la venta en notas
-    const available = await calculateAvailableCredit(customer);
-    const creditExceeded = paymentMethod === "credit" && available < total;
-    try {
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .insert({
-          cashier_id: user?.id,
-          empresa_id: empresaId,
-          customer_id: customer.id,
-          customer_name: `${customer.name} ${customer.last_name || ""}`.trim(),
-          total,
-          payment_method: paymentMethod,
-          cash_amount: cashAmount || (paymentMethod === "cash" ? total : null),
-          card_amount: cardAmount || (paymentMethod === "card" ? total : null),
-          credit_amount: paymentMethod === "credit" ? total : null,
-          notes: creditExceeded ? "credit_exceeded" : null,
-          cash_register_session_id: currentSession?.id || null,
-        })
-        .select("id")
-        .single();
-      if (saleError) throw saleError;
-      const saleItems = cart.map((item) => ({
-        sale_id: sale.id,
-        empresa_id: empresaId,
-        product_id: item.product.id.startsWith("generic-") ? null : item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        unit_price: item.product.price,
-        subtotal: item.product.price * item.quantity,
-      }));
-      const { error: itemsError } = await supabase.from("sale_items").insert(saleItems);
-      if (itemsError) throw itemsError;
-
-      // Procesar stock para cada item del carrito
-      for (const item of cart) {
-        if (item.product.id.startsWith("generic-")) continue; // Skip generic products
-        if (!item.product.stock_disabled) {
-          const previousStock = Math.max(0, item.product.stock);
-          const newStock = Math.max(0, previousStock - item.quantity);
-
-          // Registrar movimiento de stock (historial)
-          await supabase.from("stock_movements").insert({
-            product_id: item.product.id,
-            empresa_id: empresaId,
-            movement_type: "sale",
-            quantity: item.quantity,
-            previous_stock: previousStock,
-            new_stock: newStock,
-            reference_id: sale.id,
-            performed_by: user?.id,
-            notes: `Venta #${sale.sale_number}`,
-          });
-
-          // Descontar lotes FEFO (el trigger recalcula products.stock)
-          await deductFromBatches(item.product.id, item.quantity);
-
-          // Solo actualizar stock manual si NO tiene lotes activos
-          const { count } = await supabase
-            .from("product_batches")
-            .select("id", { count: "exact", head: true })
-            .eq("product_id", item.product.id)
-            .eq("status", "active")
-            .gt("quantity", 0);
-
-          if (!count || count === 0) {
-            await supabase.from("products").update({ stock: newStock }).eq("id", item.product.id);
-          }
-        }
-      }
-
-      // Update customer balance
-      const { error: balanceError } = await supabase
-        .from("customers")
-        .update({
-          current_balance: customer.current_balance + total,
-        })
-        .eq("id", customer.id);
-      if (balanceError) throw balanceError;
-
-      // Create credit record
-      const { error: creditError } = await supabase.from("credits").insert({
-        sale_id: sale.id,
-        empresa_id: empresaId,
-        customer_id: customer.id,
-        customer_name: `${customer.name} ${customer.last_name || ""}`.trim(),
-        customer_phone: customer.phone,
-        total_amount: total,
-        balance: total,
-        paid_amount: 0,
-        status: "pending",
-      });
-      if (creditError) throw creditError;
-      const changeAmount = receivedAmount ? receivedAmount - total : 0;
-
-      // Si es rehacer venta, anular la original
-      if (originalSaleId) {
-        await cancelOriginalSale(sale.id, sale.sale_number);
-      }
-
-      toast.success(
-        `Venta #${sale.sale_number} completada${changeAmount > 0 ? ` - Cambio: $${changeAmount.toFixed(2)}` : ""}`,
-      );
-      setCart([]);
-      setShowPaymentModal(false);
-      return {
-        saleId: sale.id,
-      };
-    } catch (error: any) {
-      toast.error("Error al completar venta: " + error.message);
-      throw error;
-    }
-  };
-  const completeSale = async (
-    paymentMethod: string,
-    ticketType: string,
-    cashAmount?: number,
-    cardAmount?: number,
-    receivedAmount?: number,
-  ): Promise<
-    | {
-        saleId: string;
-      }
-    | undefined
-  > => {
-    if (isProcessingSaleRef.current) return;
-    isProcessingSaleRef.current = true;
-    if (cart.length === 0) {
-      toast.error("El carrito está vacío");
-      isProcessingSaleRef.current = false;
-      return;
-    }
-    if (!empresaId) {
-      toast.error("Error: no se pudo determinar la empresa. Recargue la página.");
-      isProcessingSaleRef.current = false;
-      return;
-    }
-    const total = getTotal();
-    if (paymentMethod === "credit") {
-      if (!selectedCustomer) {
-        toast.error("Seleccione un cliente para venta a crédito");
-        isProcessingSaleRef.current = false;
-        return;
-      }
-    }
-    try {
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .insert({
-          cashier_id: user?.id,
-          empresa_id: empresaId,
-          customer_id: selectedCustomer?.id || null,
-          customer_name: selectedCustomer?.name || null,
-          total,
-          payment_method: paymentMethod,
-          cash_amount: cashAmount || (paymentMethod === "cash" ? total : null),
-          card_amount: cardAmount || (paymentMethod === "card" ? total : null),
-          credit_amount: paymentMethod === "credit" ? total : null,
-          cash_register_session_id: currentSession?.id || null,
-        })
-        .select("id")
-        .single();
-      if (saleError) throw saleError;
-      const saleItems = cart.map((item) => ({
-        sale_id: sale.id,
-        empresa_id: empresaId,
-        product_id: item.product.id.startsWith("generic-") ? null : item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        unit_price: item.product.price,
-        subtotal: item.product.price * item.quantity,
-      }));
-      const { error: itemsError } = await supabase.from("sale_items").insert(saleItems);
-      if (itemsError) throw itemsError;
-
-      // Procesar stock para cada item del carrito
-      for (const item of cart) {
-        if (item.product.id.startsWith("generic-")) continue; // Skip generic products
-        if (!item.product.stock_disabled) {
-          const previousStock = Math.max(0, item.product.stock);
-          const newStock = Math.max(0, previousStock - item.quantity);
-
-          // Registrar movimiento de stock (historial)
-          await supabase.from("stock_movements").insert({
-            product_id: item.product.id,
-            empresa_id: empresaId,
-            movement_type: "sale",
-            quantity: item.quantity,
-            previous_stock: previousStock,
-            new_stock: newStock,
-            reference_id: sale.id,
-            performed_by: user?.id,
-            notes: `Venta #${sale.sale_number}`,
-          });
-
-          // Descontar lotes FEFO (el trigger recalcula products.stock)
-          await deductFromBatches(item.product.id, item.quantity);
-
-          // Solo actualizar stock manual si NO tiene lotes activos
-          const { count } = await supabase
-            .from("product_batches")
-            .select("id", { count: "exact", head: true })
-            .eq("product_id", item.product.id)
-            .eq("status", "active")
-            .gt("quantity", 0);
-
-          if (!count || count === 0) {
-            await supabase.from("products").update({ stock: newStock }).eq("id", item.product.id);
-          }
-        }
-      }
-      if (paymentMethod === "credit" && selectedCustomer) {
-        // Update customer balance
-        const { error: balanceError } = await supabase
-          .from("customers")
-          .update({
-            current_balance: selectedCustomer.current_balance + total,
-          })
-          .eq("id", selectedCustomer.id);
-        if (balanceError) throw balanceError;
-
-        // Create credit record
-        const { error: creditError } = await supabase.from("credits").insert({
-          sale_id: sale.id,
-          empresa_id: empresaId,
-          customer_id: selectedCustomer.id,
-          customer_name: selectedCustomer.name,
-          customer_phone: selectedCustomer.phone,
-          total_amount: total,
-          balance: total,
-          paid_amount: 0,
-          status: "pending",
-        });
-        if (creditError) throw creditError;
-      }
-      const changeAmount = receivedAmount ? receivedAmount - total : 0;
-
-      // Si es rehacer venta, anular la original
-      if (originalSaleId) {
-        await cancelOriginalSale(sale.id, sale.sale_number);
-      }
-
-      toast.success(
-        `Venta #${sale.sale_number} completada${changeAmount > 0 ? ` - Cambio: $${changeAmount.toFixed(2)}` : ""}`,
-      );
-
-      // Imprimir ticket
-      printReceipt(sale, saleItems, ticketType, changeAmount);
-      setCart([]);
-      setSelectedCustomer(null);
-      setShowPaymentModal(false);
-      return {
-        saleId: sale.id,
-      };
-    } catch (error: any) {
-      toast.error("Error al completar venta: " + error.message);
-    } finally {
-      isProcessingSaleRef.current = false;
-    }
-  };
-  const printReceipt = async (sale: any, saleItems: any[], ticketType: string, changeAmount: number) => {
-    if (ticketType === "no_imprimir") return;
-    try {
-      // Obtener configuración de la empresa
-      const { data: companySettings } = await supabase.from("company_settings").select("company_name, tax_id, address, city, phone, email, currency, receipt_footer, logo_url").limit(1).single();
-
-      // Preparar datos del cliente si existe
-      let customerData = null;
-      if (selectedCustomer) {
-        customerData = {
-          name: selectedCustomer.name,
-          document: selectedCustomer.document,
-          phone: selectedCustomer.phone,
-          current_balance: selectedCustomer.current_balance,
-        };
-      }
-
-      // Preparar datos de la caja
-      const cashRegisterData = currentSession
-        ? {
-            name: currentSession.cash_registers?.name || "N/A",
-            location: currentSession.cash_registers?.location,
-          }
-        : null;
-
-      // Preparar datos de la venta con estructura completa
-      const saleData = {
-        sale_number: sale.sale_number,
-        created_at: sale.created_at,
-        total: sale.total,
-        payment_method: sale.payment_method,
-        cash_amount: sale.cash_amount,
-        card_amount: sale.card_amount,
-        credit_amount: sale.credit_amount,
-        customer_name: sale.customer_name,
-        cashier: {
-          full_name: user?.user_metadata?.full_name || user?.email || "N/A",
-        },
-        customer: customerData,
-        cash_register: cashRegisterData,
-        session_id: currentSession?.id,
-        notes: sale.notes,
-        replaces_sale_number: originalSaleNumber || undefined,
-      };
-
-      // Preparar items
-      const items = saleItems.map((item) => ({
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-      }));
-
-      // Preparar configuración de empresa
-      const company = companySettings
-        ? {
-            company_name: companySettings.company_name,
-            tax_id: companySettings.tax_id,
-            address: companySettings.address,
-            city: companySettings.city,
-            phone: companySettings.phone,
-            email: companySettings.email,
-            currency: companySettings.currency,
-            receipt_footer: companySettings.receipt_footer,
-            logo_url: companySettings.logo_url,
-          }
-        : undefined;
-
-      // Generar PDF según tipo de ticket
-      const { generateSaleA4PDF, generateSaleTicketPDF } = await import("@/lib/pdfSaleGenerator");
-      if (ticketType === "a4") {
-        await generateSaleA4PDF(saleData, items, company);
-      } else {
-        await generateSaleTicketPDF(saleData, items, company);
-      }
-    } catch (error) {
-      console.error("Error generando recibo:", error);
-      toast.error("Error al generar el comprobante");
-    }
-  };
+  // ── Render ────────────────────────────────────────────────────────────────
   if (loading || sessionLoading) {
     return (
       <MainLayout showBottomNav={false} defaultOpen={false} showMobileHeader={false}>
