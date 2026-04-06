@@ -15,12 +15,21 @@ export const useDashboardKPIs = (filters: DashboardFilters, empresaId?: string |
 
   const loadKPIs = useCallback(async () => {
     try {
-      const applyEmpresa = (query: any) =>
-        empresaId ? query.eq("empresa_id", empresaId) : query;
+      const familyId = filters.familyId;
+      const useFamilyFilter = !!familyId;
+      const salesTable = useFamilyFilter ? "sales_with_families" : "sales";
+
+      const applyEmpresa = (query: any) => {
+        let q = empresaId ? query.eq("empresa_id", empresaId) : query;
+        if (useFamilyFilter) {
+          q = q.eq("family_id", familyId);
+        }
+        return q;
+      };
 
       const { data: todaySales } = await applyEmpresa(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("total, payment_method, cash_amount, card_amount, credit_amount")
           .gte("created_at", dateRanges.today)
           .lte("created_at", dateRanges.endToday)
@@ -29,7 +38,7 @@ export const useDashboardKPIs = (filters: DashboardFilters, empresaId?: string |
 
       const { data: weekSales } = await applyEmpresa(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("total")
           .gte("created_at", dateRanges.weekStart)
           .lte("created_at", dateRanges.endToday)
@@ -38,7 +47,7 @@ export const useDashboardKPIs = (filters: DashboardFilters, empresaId?: string |
 
       const { data: monthSales } = await applyEmpresa(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("total")
           .gte("created_at", dateRanges.monthStart)
           .lte("created_at", dateRanges.endToday)
@@ -94,7 +103,7 @@ export const useDashboardKPIs = (filters: DashboardFilters, empresaId?: string |
     } catch (error) {
       console.error("Error loading KPIs:", error);
     }
-  }, [dateRanges, empresaId]);
+  }, [dateRanges, empresaId, filters.familyId]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

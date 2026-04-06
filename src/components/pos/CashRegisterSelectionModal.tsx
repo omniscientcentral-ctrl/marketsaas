@@ -263,7 +263,7 @@ export default function CashRegisterSelectionModal({
           opening_amount,
           opened_at,
           status,
-          cash_registers!inner (name, location)
+          cash_registers!inner(name, location)
         `)
         .single();
 

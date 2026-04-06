@@ -23,6 +23,7 @@ const Dashboard = () => {
   const actionableListsRef = useRef<HTMLDivElement>(null);
   const [filters, setFilters] = useState<Filters>({
     dateRange: "today",
+    familyId: null,
   });
 
   const {
@@ -39,6 +40,7 @@ const Dashboard = () => {
     expiringProducts,
     expirationSummary,
     creditEvolution,
+    monthlySales,
     refresh,
   } = useDashboardData(filters, selectedEmpresaId);
 
@@ -138,6 +140,7 @@ const Dashboard = () => {
             paymentMethods={paymentMethods}
             topProducts={topProducts}
             creditEvolution={creditEvolution}
+            monthlySales={monthlySales}
             loading={loading}
           />
         </section>

@@ -3,6 +3,7 @@ import { useDashboardKPIs } from "./useDashboardKPIs";
 import { useCashRegisters } from "./useCashRegisters";
 import { useSalesCharts } from "./useSalesCharts";
 import { useDashboardActionables } from "./useDashboardActionables";
+import { useSalesByMonth } from "./useSalesByMonth";
 import type { DashboardFilters } from "./dashboard/types";
 
 // Re-export all types so existing imports from this path continue to work
@@ -20,19 +21,24 @@ export type {
   ExpiringProduct,
   CreditEvolutionData,
   ExpirationSummary,
+  MonthlySales,
 } from "./dashboard/types";
+
+export { useSalesByMonth };
 
 export const useDashboardData = (filters: DashboardFilters, empresaId?: string | null) => {
   const kpisResult        = useDashboardKPIs(filters, empresaId);
   const cashResult        = useCashRegisters(empresaId);
   const chartsResult      = useSalesCharts(filters, empresaId);
   const actionablesResult = useDashboardActionables(filters, empresaId);
+  const monthlySalesResult = useSalesByMonth({ empresaId, familyId: filters.familyId });
 
   const loading =
     kpisResult.loading ||
     cashResult.loading ||
     chartsResult.loading ||
-    actionablesResult.loading;
+    actionablesResult.loading ||
+    monthlySalesResult.loading;
 
   const refresh = useCallback(async () => {
     await Promise.all([
@@ -40,8 +46,9 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
       cashResult.refresh(),
       chartsResult.refresh(),
       actionablesResult.refresh(),
+      monthlySalesResult.refresh(),
     ]);
-  }, [kpisResult.refresh, cashResult.refresh, chartsResult.refresh, actionablesResult.refresh]);
+  }, [kpisResult.refresh, cashResult.refresh, chartsResult.refresh, actionablesResult.refresh, monthlySalesResult.refresh]);
 
   return {
     loading,
@@ -57,6 +64,7 @@ export const useDashboardData = (filters: DashboardFilters, empresaId?: string |
     criticalStock:     actionablesResult.criticalStock,
     expiringProducts:  actionablesResult.expiringProducts,
     expirationSummary: actionablesResult.expirationSummary,
+    monthlySales:      monthlySalesResult.data,
     refresh,
   };
 };

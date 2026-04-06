@@ -5,6 +5,7 @@ export interface DashboardFilters {
   customStartDate?: Date;
   customEndDate?: Date;
   cashRegisterId?: string;
+  familyId?: string | null;
 }
 
 export interface KPIData {
@@ -89,6 +90,7 @@ export interface ExpiringProduct {
   quantity: number;
   expirationDate: string;
   daysUntilExpiration: number;
+  familyId?: string | null;
 }
 
 export interface CreditEvolutionData {
@@ -103,3 +105,8 @@ export interface ExpirationSummary {
   warningCount: number;
   noticeCount: number;
 }
+
+export type MonthlySales = {
+  month: string;
+  count: number;
+};

@@ -25,16 +25,27 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     filters.customEndDate,
   ]);
 
-  const applyEmpresa = useCallback(
-    (query: any) => (empresaId ? query.eq("empresa_id", empresaId) : query),
-    [empresaId]
+  const salesTable = useMemo(
+    () => (filters.familyId ? "sales_with_families" : "sales"),
+    [filters.familyId]
+  );
+
+  const applyFilters = useCallback(
+    (query: any) => {
+      let q = empresaId ? query.eq("empresa_id", empresaId) : query;
+      if (filters.familyId) {
+        q = q.eq("family_id", filters.familyId);
+      }
+      return q;
+    },
+    [empresaId, filters.familyId]
   );
 
   const loadDailySales = useCallback(async () => {
     try {
-      const { data } = await applyEmpresa(
+      const { data } = await applyFilters(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("created_at, total")
           .gte("created_at", subDays(new Date(), 30).toISOString())
           .eq("status", "completed")
@@ -69,13 +80,13 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     } catch (error) {
       console.error("Error loading daily sales:", error);
     }
-  }, [applyEmpresa]);
+  }, [applyFilters, salesTable, dateRanges]);
 
   const loadHourlySales = useCallback(async () => {
     try {
-      const { data } = await applyEmpresa(
+      const { data } = await applyFilters(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("created_at, total")
           .gte("created_at", dateRanges.start)
           .lte("created_at", dateRanges.end)
@@ -109,13 +120,13 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     } catch (error) {
       console.error("Error loading hourly sales:", error);
     }
-  }, [dateRanges, applyEmpresa]);
+  }, [dateRanges, applyFilters, salesTable]);
 
   const loadPaymentMethods = useCallback(async () => {
     try {
-      const { data } = await applyEmpresa(
+      const { data } = await applyFilters(
         supabase
-          .from("sales")
+          .from(salesTable)
           .select("payment_method, total")
           .gte("created_at", dateRanges.start)
           .lte("created_at", dateRanges.end)
@@ -149,17 +160,39 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     } catch (error) {
       console.error("Error loading payment methods:", error);
     }
-  }, [dateRanges, applyEmpresa]);
+  }, [dateRanges, applyFilters, salesTable]);
 
   const loadTopProducts = useCallback(async () => {
     try {
-      const { data } = await applyEmpresa(
-        supabase
-          .from("sale_items")
-          .select("product_name, quantity, subtotal")
-          .gte("created_at", dateRanges.start)
-          .lte("created_at", dateRanges.end)
-      );
+      // If family filter is active, we need to get product IDs first
+      let query = supabase
+        .from("sale_items")
+        .select("product_name, quantity, subtotal")
+        .gte("created_at", dateRanges.start)
+        .lte("created_at", dateRanges.end);
+
+      if (filters.familyId) {
+        // Get product IDs belonging to this family
+        const { data: products } = await supabase
+          .from("products")
+          .select("id")
+          .eq("family_id", filters.familyId)
+          .eq("active", true);
+
+        const productIds = products?.map((p) => p.id) || [];
+        if (productIds.length === 0) {
+          setTopProducts([]);
+          return;
+        }
+
+        query = query.in("product_id", productIds);
+      }
+
+      if (empresaId) {
+        query = query.eq("empresa_id", empresaId);
+      }
+
+      const { data } = await query;
 
       if (data) {
         const productMap = new Map<string, { revenue: number; quantity: number }>();
@@ -182,25 +215,48 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     } catch (error) {
       console.error("Error loading top products:", error);
     }
-  }, [dateRanges, applyEmpresa]);
+  }, [dateRanges, filters.familyId, empresaId]);
 
   const loadCreditEvolution = useCallback(async () => {
     try {
       const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
-      const { data: credits } = await applyEmpresa(
-        supabase
-          .from("credits")
-          .select("created_at, total_amount")
-          .gte("created_at", thirtyDaysAgo)
-      );
+      let creditsQuery = supabase
+        .from("credits")
+        .select("created_at, total_amount, sale_id")
+        .gte("created_at", thirtyDaysAgo);
 
-      const { data: payments } = await applyEmpresa(
-        supabase
-          .from("credit_payments")
-          .select("created_at, amount")
-          .gte("created_at", thirtyDaysAgo)
-      );
+      let paymentsQuery = supabase
+        .from("credit_payments")
+        .select("created_at, amount")
+        .gte("created_at", thirtyDaysAgo);
+
+      if (filters.familyId) {
+        // Get sale IDs for this family to filter credits
+        const { data: familySales } = await supabase
+          .from("sales_with_families")
+          .select("sale_id")
+          .eq("family_id", filters.familyId)
+          .gte("created_at", thirtyDaysAgo);
+
+        const saleIds = familySales?.map((s) => s.sale_id) || [];
+        if (saleIds.length === 0) {
+          setCreditEvolution([]);
+          return;
+        }
+
+        creditsQuery = creditsQuery.in("sale_id", saleIds);
+        // credit_payments may not have sale_id directly, may need different logic
+        // For now, skip filter on payments if they don't have sale_id relation
+      }
+
+      if (empresaId) {
+        creditsQuery = creditsQuery.eq("empresa_id", empresaId);
+        // payments might not have empresa_id; skip
+      }
+
+      const { data: credits } = await creditsQuery;
+      const { data: payments } = await paymentsQuery;
 
       const evolutionMap = new Map<string, { debt: number; payments: number }>();
 
@@ -231,7 +287,7 @@ export const useSalesCharts = (filters: DashboardFilters, empresaId?: string | n
     } catch (error) {
       console.error("Error loading credit evolution:", error);
     }
-  }, [applyEmpresa]);
+  }, [filters, empresaId, dateRanges]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

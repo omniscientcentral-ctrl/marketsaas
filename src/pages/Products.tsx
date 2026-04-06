@@ -27,7 +27,7 @@ interface Product {
   stock: number;
   min_stock: number;
   barcode: string | null;
-  category: string | null;
+  family_id: string | null;
   active: boolean;
   stock_disabled?: boolean;
 }
@@ -54,6 +54,7 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [showDisableStockConfirm, setShowDisableStockConfirm] = useState(false);
+  const [families, setFamilies] = useState<{ id: string; name: string }[]>([]);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -62,7 +63,7 @@ const Products = () => {
     stock: "0",
     min_stock: "5",
     barcode: "",
-    category: "",
+    family_id: "",
   });
 
   useEffect(() => {
@@ -74,7 +75,24 @@ const Products = () => {
     fetchProducts(1);
     setCurrentPage(1);
     fetchBatchCounts();
+    fetchFamilies();
   }, [user, loading, navigate, empresaId]);
+
+  const fetchFamilies = async () => {
+    if (!empresaId) return;
+    try {
+      const { data, error } = await supabase
+        .from("product_families")
+        .select("id, name")
+        .eq("empresa_id", empresaId)
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      setFamilies(data || []);
+    } catch {
+      setFamilies([]);
+    }
+  };
 
   // Auto-enfoque en el campo de búsqueda al montar y cuando se presiona cualquier tecla
   useEffect(() => {
@@ -171,7 +189,7 @@ const Products = () => {
       // Obtener productos paginados
       const { data: prod, error: prodErr } = await supabase
         .from("products")
-        .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
+        .select("id, name, price, cost, stock, min_stock, barcode, family_id, active, stock_disabled")
         .eq("active", true)
         .eq("empresa_id", empresaId)
         .order("name")
@@ -207,14 +225,14 @@ const Products = () => {
         const [exactRes, partialRes] = await Promise.all([
           supabase
             .from("products")
-            .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
+            .select("id, name, price, cost, stock, min_stock, barcode, family_id, active, stock_disabled")
             .eq("active", true)
             .eq("empresa_id", empresaId)
             .eq("barcode", term)
             .limit(10),
           supabase
             .from("products")
-            .select("id, name, price, cost, stock, min_stock, barcode, category, active, stock_disabled")
+            .select("id, name, price, cost, stock, min_stock, barcode, family_id, active, stock_disabled")
             .eq("active", true)
             .eq("empresa_id", empresaId)
             .or(`barcode.ilike.%${term}%,name.ilike.%${term}%,category.ilike.%${term}%`)
@@ -304,7 +322,7 @@ const Products = () => {
           stock: newStock,
           min_stock: parseInt(formData.min_stock),
           barcode: formData.barcode || null,
-          category: formData.category || null,
+          family_id: formData.family_id || null,
         };
 
         const { error } = await supabase
@@ -378,7 +396,7 @@ const Products = () => {
           stock: 0,
           min_stock: parseInt(formData.min_stock),
           barcode: barcodeToUse,
-          category: formData.category || null,
+          family_id: formData.family_id || null,
           empresa_id: empresaId,
         };
 
@@ -418,7 +436,7 @@ const Products = () => {
       stock: product.stock.toString(),
       min_stock: product.min_stock.toString(),
       barcode: product.barcode || "",
-      category: product.category || "",
+      family_id: product.family_id || "",
     });
     setIsDialogOpen(true);
   };
@@ -449,7 +467,7 @@ const Products = () => {
       stock: "0",
       min_stock: "5",
       barcode: "",
-      category: "",
+      family_id: "",
     });
   };
 
@@ -605,12 +623,20 @@ const Products = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category">Categoría</Label>
-                    <Input
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    />
+                    <Label htmlFor="family_id">Familia</Label>
+                    <select
+                      id="family_id"
+                      value={formData.family_id}
+                      onChange={(e) => setFormData({ ...formData, family_id: e.target.value })}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Sin familia</option>
+                      {families.map((family) => (
+                        <option key={family.id} value={family.id}>
+                          {family.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="barcode">Código de Barras</Label>
@@ -632,7 +658,7 @@ const Products = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
-                placeholder="Buscar por nombre, código o categoría..."
+                placeholder="Buscar por nombre, código o familia..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 h-10"
@@ -744,6 +770,7 @@ const Products = () => {
                 <TableRow>
                   <TableHead>Nombre</TableHead>
                   <TableHead className="hidden lg:table-cell">Código</TableHead>
+                  <TableHead>Familia</TableHead>
                   <TableHead>Precio</TableHead>
                   <TableHead>Stock</TableHead>
                   <TableHead>Lotes</TableHead>
@@ -759,6 +786,16 @@ const Products = () => {
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">
                       {product.barcode || "-"}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const family = families.find(f => f.id === product.family_id);
+                        return family ? (
+                          <span className="text-xs">{family.name}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="font-bold text-primary">
                       ${product.price.toFixed(2)}

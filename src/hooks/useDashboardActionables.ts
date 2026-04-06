@@ -89,12 +89,20 @@ export const useDashboardActionables = (filters: DashboardFilters, empresaId?: s
 
   const loadCriticalStock = useCallback(async () => {
     try {
-      const { data: products } = await applyEmpresa(
-        supabase
-          .from("products")
-          .select("id, name, stock, stock_disabled")
-          .eq("active", true)
-      );
+      let productsQuery = supabase
+        .from("products")
+        .select("id, name, stock, stock_disabled")
+        .eq("active", true);
+
+      if (empresaId) {
+        productsQuery = productsQuery.eq("empresa_id", empresaId);
+      }
+
+      if (filters.familyId) {
+        productsQuery = productsQuery.eq("family_id", filters.familyId);
+      }
+
+      const { data: products } = await productsQuery;
 
       const { data: recentSales } = await applyEmpresa(
         supabase
@@ -127,18 +135,26 @@ export const useDashboardActionables = (filters: DashboardFilters, empresaId?: s
     } catch (error) {
       console.error("Error loading critical stock:", error);
     }
-  }, [applyEmpresa]);
+  }, [applyEmpresa, filters.familyId, dateRanges]);
 
   const loadExpiringProducts = useCallback(async () => {
     try {
-      const { data } = await applyEmpresa(
-        supabase
-          .from("products_expiring_soon")
-          .select("batch_id, product_id, product_name, batch_number, quantity, expiration_date, days_until_expiry")
-          .gt("quantity", 0)
-          .order("days_until_expiry", { ascending: true })
-          .limit(20)
-      );
+      let query = supabase
+        .from("products_expiring_soon")
+        .select("batch_id, product_id, product_name, batch_number, quantity, expiration_date, days_until_expiry")
+        .gt("quantity", 0)
+        .order("days_until_expiry", { ascending: true })
+        .limit(20);
+
+      if (empresaId) {
+        query = query.eq("empresa_id", empresaId);
+      }
+
+      if (filters.familyId) {
+        query = query.eq("family_id", filters.familyId);
+      }
+
+      const { data } = await query;
 
       if (data) {
         setExpiringProducts(
@@ -149,6 +165,7 @@ export const useDashboardActionables = (filters: DashboardFilters, empresaId?: s
             quantity: Number(p.quantity),
             expirationDate: p.expiration_date || "",
             daysUntilExpiration: p.days_until_expiry || 0,
+            familyId: p.family_id || null,
           }))
         );
 
@@ -172,7 +189,7 @@ export const useDashboardActionables = (filters: DashboardFilters, empresaId?: s
     } catch (error) {
       console.error("Error loading expiring products:", error);
     }
-  }, [applyEmpresa]);
+  }, [filters.familyId, empresaId]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

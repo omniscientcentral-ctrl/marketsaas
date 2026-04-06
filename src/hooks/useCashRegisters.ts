@@ -8,59 +8,74 @@ export const useCashRegisters = (empresaId?: string | null) => {
 
   const loadCashRegisters = useCallback(async () => {
     try {
-      if (empresaId) {
-        const { data: registers } = await supabase
-          .from("cash_registers")
-          .select("id, name, location, cash_register_sessions!left(opened_at, cashier_id, status)")
-          .eq("empresa_id", empresaId)
-          .eq("is_active", true)
-          .eq("cash_register_sessions.status", "open");
+      // Primero, obtener las cajas activas
+      let cashRegistersQuery = supabase
+        .from("cash_registers")
+        .select("id, name, location")
+        .eq("is_active", true);
 
-        if (registers) {
-          const result: CashRegisterStatus[] = registers.map((r) => {
-            const sessions = (r.cash_register_sessions as Array<{ opened_at: string | null; cashier_id: string; status: string }> | null) ?? [];
-            const session = sessions[0] ?? null;
-            return {
-              id: r.id,
-              name: r.name,
-              location: r.location,
-              isOpen: sessions.length > 0,
-              openByUser: null,
-              openedAt: session?.opened_at ?? null,
-              lastDifference: null,
-            };
-          });
-          setCashRegisters(result);
-        }
-      } else {
-        const { data } = await supabase.rpc("get_cash_registers_status");
-        if (data) {
-          const registers: CashRegisterStatus[] = data.map((r: any) => ({
-            id: r.cash_register_id,
-            name: r.name,
-            location: r.location,
-            isOpen: !!r.open_session_id,
-            openByUser: r.open_by_user_name,
-            openedAt: r.opened_at,
-            lastDifference: null,
-          }));
-          setCashRegisters(registers);
-        }
+      if (empresaId) {
+        cashRegistersQuery = cashRegistersQuery.eq("empresa_id", empresaId);
       }
+
+      const { data: registers, error: registersError } = await cashRegistersQuery;
+
+      if (registersError) {
+        throw registersError;
+      }
+
+      if (!registers || registers.length === 0) {
+        setCashRegisters([]);
+        return;
+      }
+
+      // Obtener sesiones abiertas para todas las cajas
+      const registerIds = registers.map((r) => r.id);
+      const { data: sessions } = await supabase
+        .from("cash_register_sessions")
+        .select("cash_register_id, opened_at, cashier_id")
+        .in("cash_register_id", registerIds)
+        .eq("status", "open");
+
+      // Crear mapa de sesiones por caja
+      const sessionsByRegister = new Map<string, { opened_at: string; cashier_id: string }>();
+      sessions?.forEach((session) => {
+        sessionsByRegister.set(session.cash_register_id, {
+          opened_at: session.opened_at,
+          cashier_id: session.cashier_id,
+        });
+      });
+
+      // Combinar datos de cajas con sesiones
+      const result: CashRegisterStatus[] = registers.map((r) => {
+        const session = sessionsByRegister.get(r.id) || null;
+        return {
+          id: r.id,
+          name: r.name,
+          location: r.location,
+          isOpen: session !== null,
+          openByUser: null, // Necesitaríamos join con users para obtener el nombre
+          openedAt: session?.opened_at || null,
+          lastDifference: null,
+        };
+      });
+
+      setCashRegisters(result);
     } catch (error) {
       console.error("Error loading cash registers:", error);
+      setCashRegisters([]);
+    } finally {
+      setLoading(false);
     }
   }, [empresaId]);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     await loadCashRegisters();
-    setLoading(false);
   }, [loadCashRegisters]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    loadCashRegisters();
+  }, [loadCashRegisters]);
 
   return { loading, cashRegisters, refresh };
 };

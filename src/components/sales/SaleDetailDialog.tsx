@@ -81,7 +81,7 @@ export function SaleDetailDialog({ saleId, open, onClose }: SaleDetailDialogProp
         sessionId = sale.cash_register_session_id;
         const { data: session } = await supabase
           .from("cash_register_sessions")
-          .select(`id, cash_register_id, cash_registers (name, location)`)
+          .select(`id, cash_register_id, cash_registers(name, location)`)
           .eq("id", sale.cash_register_session_id)
           .single();
         if (session) {

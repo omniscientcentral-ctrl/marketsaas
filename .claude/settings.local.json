@@ -17,7 +17,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(ls -1t supabase/migrations/*.sql)",
-      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && grep -n \"payment_method.*IN\" {} | head -10')"
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && grep -n \"payment_method.*IN\" {} | head -10')",
+      "Bash(xxd)",
+      "Bash(pnpm test:*)",
+      "Bash(npm test:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

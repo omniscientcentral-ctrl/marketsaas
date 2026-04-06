@@ -24,7 +24,7 @@ export function usePOSSession(userId: string | undefined) {
           opening_amount,
           opened_at,
           status,
-          cash_registers (name, location)
+          cash_registers(name, location)
         `,
         )
         .eq("cashier_id", userId)

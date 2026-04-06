@@ -26,6 +26,7 @@ import type {
   PaymentMethodData,
   TopProduct,
   CreditEvolutionData,
+  MonthlySales,
 } from "@/hooks/useDashboardData";
 
 interface SalesChartsProps {
@@ -34,6 +35,7 @@ interface SalesChartsProps {
   paymentMethods: PaymentMethodData[];
   topProducts: TopProduct[];
   creditEvolution: CreditEvolutionData[];
+  monthlySales: MonthlySales[];
   loading: boolean;
 }
 
@@ -66,6 +68,7 @@ export const SalesCharts = ({
   paymentMethods,
   topProducts,
   creditEvolution,
+  monthlySales,
   loading,
 }: SalesChartsProps) => {
   const formattedDailySales = dailySales.map((d) => ({
@@ -81,6 +84,12 @@ export const SalesCharts = ({
   const formattedCreditEvolution = creditEvolution.map((c) => ({
     ...c,
     dateLabel: format(new Date(c.date), "dd MMM", { locale: es }),
+  }));
+
+  // Format monthly sales data - show month name
+  const formattedMonthlySales = monthlySales.map((m) => ({
+    ...m,
+    monthLabel: format(new Date(m.month + "-01"), "MMM yyyy", { locale: es }),
   }));
 
   return (
@@ -330,85 +339,138 @@ export const SalesCharts = ({
         </Card>
       </div>
 
-      {/* Row 3: Credit Evolution */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Evolución del Fiado</CardTitle>
-          <CardDescription className="text-xs">
-            Deuda generada vs pagos recibidos (últimos 30 días)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <ChartSkeleton />
-          ) : creditEvolution.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              Sin datos disponibles
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={formattedCreditEvolution}>
-                <defs>
-                  <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorPayments" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="dateLabel"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
-                  tickLine={false}
-                  tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(value),
-                    name === "totalDebt" ? "Deuda Generada" : "Pagos Recibidos",
-                  ]}
-                />
-                <Legend
-                  formatter={(value) =>
-                    value === "totalDebt" ? "Deuda Generada" : "Pagos Recibidos"
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="totalDebt"
-                  stroke="hsl(var(--destructive))"
-                  fillOpacity={1}
-                  fill="url(#colorDebt)"
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="totalPayments"
-                  stroke="hsl(var(--success))"
-                  fillOpacity={1}
-                  fill="url(#colorPayments)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      {/* Row 3: Monthly Sales and Credit Evolution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Monthly Sales Bar Chart (Last 12 Months) */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Ventas Últimos 12 Meses</CardTitle>
+            <CardDescription className="text-xs">
+              Total de tickets por mes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <ChartSkeleton />
+            ) : formattedMonthlySales.length === 0 ? (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                Sin datos disponibles
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={formattedMonthlySales}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="monthLabel"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={9}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={10}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [value, "Tickets"]}
+                    labelFormatter={(label) => label}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Credit Evolution */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Evolución del Fiado</CardTitle>
+            <CardDescription className="text-xs">
+              Deuda generada vs pagos recibidos (últimos 30 días)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <ChartSkeleton />
+            ) : creditEvolution.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                Sin datos disponibles
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={formattedCreditEvolution}>
+                  <defs>
+                    <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorPayments" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="dateLabel"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={10}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={10}
+                    tickLine={false}
+                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name === "totalDebt" ? "Deuda Generada" : "Pagos Recibidos",
+                    ]}
+                  />
+                  <Legend
+                    formatter={(value) =>
+                      value === "totalDebt" ? "Deuda Generada" : "Pagos Recibidos"
+                    }
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="totalDebt"
+                    stroke="hsl(var(--destructive))"
+                    fillOpacity={1}
+                    fill="url(#colorDebt)"
+                    strokeWidth={2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="totalPayments"
+                    stroke="hsl(var(--success))"
+                    fillOpacity={1}
+                    fill="url(#colorPayments)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

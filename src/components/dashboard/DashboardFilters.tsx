@@ -16,6 +16,7 @@ import { Calendar as CalendarIcon, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { DateRange, DashboardFilters as Filters } from "@/hooks/useDashboardData";
+import { FamilyFilter } from "./FamilyFilter";
 
 interface DashboardFiltersProps {
   filters: Filters;
@@ -64,6 +65,14 @@ export const DashboardFilters = ({
           <SelectItem value="custom">Personalizado</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Family Filter */}
+      <FamilyFilter
+        selectedFamilyId={filters.familyId}
+        onFamilyChange={(familyId) =>
+          onFiltersChange({ ...filters, familyId })
+        }
+      />
 
       {/* Custom Date Range */}
       {filters.dateRange === "custom" && (

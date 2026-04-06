@@ -13,6 +13,7 @@ const Auth               = lazy(() => import("./pages/Auth"));
 const Dashboard          = lazy(() => import("./pages/Dashboard"));
 const POS                = lazy(() => import("./pages/POS"));
 const Products           = lazy(() => import("./pages/Products"));
+const ProductFamilies    = lazy(() => import("./pages/ProductFamilies"));
 const Customers          = lazy(() => import("./pages/Customers"));
 const Settings           = lazy(() => import("./pages/Settings"));
 const Sales              = lazy(() => import("./pages/Sales"));
@@ -57,6 +58,7 @@ const App = () => (
             {/* Write-capable pages: blocked in global mode */}
             <Route path="/pos" element={<GlobalModeGuard><POS /></GlobalModeGuard>} />
             <Route path="/products" element={<GlobalModeGuard><Products /></GlobalModeGuard>} />
+            <Route path="/products/families" element={<GlobalModeGuard><ProductFamilies /></GlobalModeGuard>} />
             <Route path="/customers" element={<GlobalModeGuard><Customers /></GlobalModeGuard>} />
             <Route path="/settings" element={<GlobalModeGuard><Settings /></GlobalModeGuard>} />
             <Route path="/cash-closure" element={<GlobalModeGuard><CashClosure /></GlobalModeGuard>} />
