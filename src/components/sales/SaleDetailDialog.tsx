@@ -447,6 +447,7 @@ export function SaleDetailDialog({ saleId, open, onClose }: SaleDetailDialogProp
                     {sale.payment_method === "card" && "Tarjeta"}
                     {sale.payment_method === "credit" && "Crédito"}
                     {sale.payment_method === "mixed" && "Mixto"}
+                    {sale.payment_method === "transfer" && "Transferencia"}
                   </Badge>
                 </div>
                 {sale.cash_amount > 0 && (

@@ -186,6 +186,7 @@ export function usePOSSale({
         cash_amount: sale.cash_amount,
         card_amount: sale.card_amount,
         credit_amount: sale.credit_amount,
+        transfer_amount: sale.transfer_amount,
         customer_name: sale.customer_name,
         cashier: {
           full_name: user?.user_metadata?.full_name || user?.email || "N/A",
@@ -387,7 +388,7 @@ export function usePOSSale({
           notes: creditExceeded ? "credit_exceeded" : null,
           cash_register_session_id: currentSession?.id || null,
         })
-        .select("id")
+        .select("id, sale_number, created_at, total, payment_method, cash_amount, card_amount, credit_amount, transfer_amount, customer_name")
         .single();
       if (saleError) throw saleError;
 
@@ -525,7 +526,7 @@ export function usePOSSale({
           transfer_amount: paymentMethod === "transfer" ? total : null,
           cash_register_session_id: currentSession?.id || null,
         })
-        .select("id")
+        .select("id, sale_number, created_at, total, payment_method, cash_amount, card_amount, credit_amount, transfer_amount, customer_name")
         .single();
       if (saleError) throw saleError;
 
@@ -601,6 +602,17 @@ export function usePOSSale({
       // If this is a redo, cancel the original sale
       if (originalSaleId) {
         await cancelOriginalSale(sale.id, sale.sale_number);
+      }
+
+      // Validar y normalizar created_at antes de generar el PDF
+      if (sale.created_at) {
+        const parsedDate = new Date(sale.created_at as any);
+        if (isNaN(parsedDate.getTime())) {
+          console.warn("created_at inválido, usando fecha actual", sale.created_at);
+          sale.created_at = new Date().toISOString();
+        } else {
+          sale.created_at = parsedDate.toISOString();
+        }
       }
 
       toast.success(

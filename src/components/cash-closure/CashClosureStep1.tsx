@@ -87,6 +87,10 @@ export function CashClosureStep1({ cashRegister, salesData, onNext }: CashClosur
             <span className="font-medium">💰 Crédito/Fiado</span>
             <span className="text-lg font-bold">${Number(salesData?.creditTotal || 0).toFixed(2)}</span>
           </div>
+          <div className="flex justify-between items-center p-3 bg-purple-500/10 rounded-lg">
+            <span className="font-medium">🏦 Transferencia</span>
+            <span className="text-lg font-bold">${Number(salesData?.transferTotal || 0).toFixed(2)}</span>
+          </div>
           <div className="flex justify-between items-center p-3 bg-red-500/10 rounded-lg">
             <span className="font-medium">🏦 Egresos/Gastos</span>
             <span className="text-lg font-bold">-${Number(salesData?.totalExpenses || 0).toFixed(2)}</span>

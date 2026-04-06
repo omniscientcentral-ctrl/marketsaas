@@ -11,6 +11,7 @@ interface SaleData {
   cash_amount?: number;
   card_amount?: number;
   credit_amount?: number;
+  transfer_amount?: number;
   customer_name?: string;
   cashier?: { full_name: string };
   customer?: {
@@ -30,6 +31,16 @@ interface SaleData {
   session_id?: string;
   replaces_sale_number?: number;
 }
+
+// Normaliza created_at asegurando un ISO string válido
+const normalizeSaleDate = (date: any): string => {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) {
+    console.warn("Fecha inválida en SaleData, usando fecha actual", date);
+    return new Date().toISOString();
+  }
+  return d.toISOString();
+};
 
 interface SaleItem {
   product_name: string;
@@ -98,6 +109,7 @@ const getPaymentMethodLabel = (method: string): string => {
     card: "Tarjeta",
     credit: "Crédito",
     mixed: "Mixto",
+    transfer: "Transferencia",
   };
   return labels[method] || "Otro";
 };
@@ -114,6 +126,9 @@ export const generateSaleA4PDF = async (
   copyLabel?: string,  // "COPIA EMPRESA" | "COPIA CLIENTE"
   showDebt: boolean = true
 ) => {
+  // Normalizar fecha
+  sale.created_at = normalizeSaleDate(sale.created_at);
+
   const pdf = new jsPDF();
   const currency = company?.currency || "$";
   let yPos = 15;
@@ -415,6 +430,9 @@ export const generateSaleTicketPDF = async (
   copyLabel?: string,  // "COPIA EMPRESA" | "COPIA CLIENTE"
   showDebt: boolean = true
 ) => {
+  // Normalizar fecha
+  sale.created_at = normalizeSaleDate(sale.created_at);
+
   // Calcular altura dinámica basada en contenido
   const baseHeight = 120;
   const itemsHeight = items.length * 12;
@@ -508,7 +526,18 @@ export const generateSaleTicketPDF = async (
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7);
-  pdf.text(format(new Date(sale.created_at), "dd/MM/yyyy HH:mm", { locale: es }), centerX, yPos, { align: "center" });
+  // Validar created_at antes de formatear
+  let createdAt = sale.created_at;
+  if (!createdAt || createdAt === "undefined") {
+    createdAt = new Date().toISOString();
+  }
+  const parsedDate = new Date(createdAt);
+  if (isNaN(parsedDate.getTime())) {
+    console.warn("created_at inválido en PDF, usando fecha actual", createdAt);
+    createdAt = new Date().toISOString();
+  }
+  const formattedDate = format(createdAt, "dd/MM/yyyy HH:mm", { locale: es });
+  pdf.text(formattedDate, centerX, yPos, { align: "center" });
   yPos += 3;
   
   pdf.text(`Tipo: ${getSaleTypeLabel(sale.payment_method)}`, leftMargin, yPos);

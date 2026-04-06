@@ -134,6 +134,11 @@ export default function CashClosure() {
         ?.filter(s => s.payment_method === "mixed")
         .reduce((sum, s) => sum + Number(s.card_amount || 0), 0) || 0;
 
+      // Transferencias bancarias
+      const transferTotal = sales
+        ?.filter(s => s.payment_method === "transfer")
+        .reduce((sum, s) => sum + Number(s.transfer_amount || s.total), 0) || 0;
+
       // Obtener ventas en espera
       const { data: pendingSales } = await supabase
         .from("pending_sales")
@@ -154,6 +159,7 @@ export default function CashClosure() {
         cashTotal: cashTotal + mixedCash,
         cardTotal: cardTotal + mixedCard,
         creditTotal,
+        transferTotal,
         totalExpenses,
         pendingSalesCount: pendingSales?.length || 0,
         expectedCash: register.opening_amount + cashTotal + mixedCash - totalExpenses
@@ -271,10 +277,11 @@ export default function CashClosure() {
         };
 
         const pdfSalesData = {
-          totalSales: (salesData?.cashTotal || 0) + (salesData?.cardTotal || 0) + (salesData?.creditTotal || 0),
+          totalSales: (salesData?.cashTotal || 0) + (salesData?.cardTotal || 0) + (salesData?.creditTotal || 0) + (salesData?.transferTotal || 0),
           cashSales: salesData?.cashTotal || 0,
           cardSales: salesData?.cardTotal || 0,
           creditSales: salesData?.creditTotal || 0,
+          transferSales: salesData?.transferTotal || 0,
         };
 
         const cashierName = profileData?.full_name || user?.email || "Usuario";
