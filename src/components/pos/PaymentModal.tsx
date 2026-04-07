@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { DollarSign, CreditCard, Split } from "lucide-react";
+import { DollarSign, CreditCard, Split, Banknote } from "lucide-react";
 
 interface PaymentModalProps {
   open: boolean;
@@ -92,7 +92,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6">
         <DialogHeader>
           <DialogTitle>Cobrar - Total: ${total.toFixed(2)}</DialogTitle>
         </DialogHeader>
@@ -116,22 +116,26 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
         </div>
 
         <Tabs defaultValue="cash" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="cash">
-              <DollarSign className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-4 gap-1 p-2 bg-muted mb-16">
+            <TabsTrigger value="cash" className="flex flex-col items-center justify-center gap-1 h-20 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors">
+              <DollarSign className="h-6 w-6" />
+              <span className="text-xs font-medium leading-tight">Efectivo</span>
             </TabsTrigger>
-            <TabsTrigger value="card">
-              <CreditCard className="h-4 w-4" />
+            <TabsTrigger value="transfer" className="flex flex-col items-center justify-center gap-1 h-20 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors">
+              <Banknote className="h-6 w-6" />
+              <span className="text-xs font-medium leading-tight">Transfer</span>
             </TabsTrigger>
-            <TabsTrigger value="mixed">
-              <Split className="h-4 w-4" />
+            <TabsTrigger value="card" className="flex flex-col items-center justify-center gap-1 h-20 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors">
+              <CreditCard className="h-6 w-6" />
+              <span className="text-xs font-medium leading-tight">Tarjeta</span>
             </TabsTrigger>
-            <TabsTrigger value="transfer">
-              <DollarSign className="h-4 w-4" /> {/* Using same icon for now, can change */}
+            <TabsTrigger value="mixed" className="flex flex-col items-center justify-center gap-1 h-20 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-colors">
+              <Split className="h-6 w-6" />
+              <span className="text-xs font-medium leading-tight">Mixto</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cash" className="space-y-4">
+          <TabsContent value="cash" className="space-y-4 min-h-[320px]">
             <div>
               <Label htmlFor="received">Monto Recibido</Label>
               <Input
@@ -177,7 +181,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
             </Button>
           </TabsContent>
 
-          <TabsContent value="card" className="space-y-4">
+          <TabsContent value="card" className="space-y-4 min-h-[320px]">
             <div className="p-4 bg-secondary rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-2">Total a Cobrar</p>
               <p className="text-3xl font-bold text-primary">${total.toFixed(2)}</p>
@@ -189,7 +193,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
             </Button>
           </TabsContent>
 
-          <TabsContent value="mixed" className="space-y-4">
+          <TabsContent value="mixed" className="space-y-4 min-h-[320px]">
             <div>
               <Label htmlFor="cash-mixed">Efectivo</Label>
               <Input
@@ -242,7 +246,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
             </Button>
           </TabsContent>
 
-          <TabsContent value="transfer" className="space-y-4">
+          <TabsContent value="transfer" className="space-y-4 min-h-[320px]">
             <div className="p-4 bg-secondary rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-2">Total a Transferir</p>
               <p className="text-3xl font-bold text-primary">${total.toFixed(2)}</p>
@@ -265,7 +269,7 @@ const PaymentModal = ({ open, onClose, total, onComplete }: PaymentModalProps) =
               size="lg"
               disabled={processing || !transferReference.trim()}
             >
-              <DollarSign className="mr-2 h-5 w-5" />
+              <Banknote className="mr-2 h-5 w-5" />
               Confirmar Transferencia
             </Button>
 
