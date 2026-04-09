@@ -78,7 +78,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
     if (!empresaId) return;
     const [suppRes, prodRes] = await Promise.all([
       supabase.from("suppliers").select("id, name").eq("empresa_id", empresaId).eq("is_active", true).order("name"),
-      supabase.from("products").select("id, name, cost, iva_tipo, utilidad_porcentaje").eq("empresa_id", empresaId).eq("active", true).order("name"),
+      supabase.from("products").select("id, name, cost").eq("empresa_id", empresaId).eq("active", true).order("name"),
     ]);
     setSuppliers(suppRes.data || []);
     setProducts(prodRes.data || []);
