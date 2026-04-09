@@ -724,8 +724,10 @@ export type Database = {
       }
       empresas: {
         Row: {
+          cdg_dgi_sucur: string | null
           ciudad_fiscal: string | null
           created_at: string | null
+          departamento_fiscal: string | null
           domicilio_fiscal: string | null
           email: string | null
           estado: string
@@ -741,11 +743,14 @@ export type Database = {
           rut: string | null
           subdominio: string | null
           telefono: string | null
+          telefono_fiscal: string | null
           updated_at: string | null
         }
         Insert: {
+          cdg_dgi_sucur?: string | null
           ciudad_fiscal?: string | null
           created_at?: string | null
+          departamento_fiscal?: string | null
           domicilio_fiscal?: string | null
           email?: string | null
           estado?: string
@@ -761,11 +766,14 @@ export type Database = {
           rut?: string | null
           subdominio?: string | null
           telefono?: string | null
+          telefono_fiscal?: string | null
           updated_at?: string | null
         }
         Update: {
+          cdg_dgi_sucur?: string | null
           ciudad_fiscal?: string | null
           created_at?: string | null
+          departamento_fiscal?: string | null
           domicilio_fiscal?: string | null
           email?: string | null
           estado?: string
@@ -781,6 +789,7 @@ export type Database = {
           rut?: string | null
           subdominio?: string | null
           telefono?: string | null
+          telefono_fiscal?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1260,6 +1269,47 @@ export type Database = {
           },
         ]
       }
+      product_families: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          empresa_id: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_families_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_stock_balance: {
         Row: {
           current_balance: number
@@ -1311,6 +1361,7 @@ export type Database = {
           cost: number | null
           created_at: string | null
           empresa_id: string
+          family_id: string | null
           id: string
           min_stock: number | null
           name: string
@@ -1327,6 +1378,7 @@ export type Database = {
           cost?: number | null
           created_at?: string | null
           empresa_id?: string
+          family_id?: string | null
           id?: string
           min_stock?: number | null
           name: string
@@ -1343,6 +1395,7 @@ export type Database = {
           cost?: number | null
           created_at?: string | null
           empresa_id?: string
+          family_id?: string | null
           id?: string
           min_stock?: number | null
           name?: string
@@ -1357,6 +1410,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
             referencedColumns: ["id"]
           },
         ]
@@ -1787,6 +1847,7 @@ export type Database = {
           status: string | null
           tipo_cfe: string | null
           total: number
+          transfer_amount: number | null
         }
         Insert: {
           cae_number?: number | null
@@ -1819,6 +1880,7 @@ export type Database = {
           status?: string | null
           tipo_cfe?: string | null
           total: number
+          transfer_amount?: number | null
         }
         Update: {
           cae_number?: number | null
@@ -1851,6 +1913,7 @@ export type Database = {
           status?: string | null
           tipo_cfe?: string | null
           total?: number
+          transfer_amount?: number | null
         }
         Relationships: [
           {
