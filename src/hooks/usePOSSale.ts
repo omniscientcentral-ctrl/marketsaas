@@ -400,6 +400,11 @@ export function usePOSSale({
         quantity: item.quantity,
         unit_price: item.product.price,
         subtotal: item.product.price * item.quantity,
+        iva_tipo: item.iva_tipo,
+        iva_porcentaje: item.iva_porcentaje,
+        utilidad_porcentaje: item.utilidad_porcentaje,
+        costo_con_iva: item.costo_con_iva,
+        precio_final: item.precio_final,
       }));
       const { error: itemsError } = await supabase.from("sale_items").insert(saleItems);
       if (itemsError) throw itemsError;
@@ -538,6 +543,11 @@ export function usePOSSale({
         quantity: item.quantity,
         unit_price: item.product.price,
         subtotal: item.product.price * item.quantity,
+        iva_tipo: item.iva_tipo,
+        iva_porcentaje: item.iva_porcentaje,
+        utilidad_porcentaje: item.utilidad_porcentaje,
+        costo_con_iva: item.costo_con_iva,
+        precio_final: item.precio_final,
       }));
       const { error: itemsError } = await supabase.from("sale_items").insert(saleItems);
       if (itemsError) throw itemsError;

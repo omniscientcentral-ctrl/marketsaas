@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { receivePurchaseOrder } from "@/hooks/usePurchaseOrderReception";
+import { ItemPricingSettings, IvaTipo } from "@/components/shared/ItemPricingSettings";
 
 interface OrderItem {
   product_id: string;
@@ -17,6 +18,11 @@ interface OrderItem {
   quantity: number;
   unit_cost: number;
   expiration_date: string;
+  iva_tipo: IvaTipo;
+  iva_porcentaje: number;
+  utilidad_porcentaje: number;
+  costo_con_iva: number;
+  precio_final: number;
 }
 
 interface Props {
@@ -55,6 +61,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
             quantity: Number(i.quantity),
             unit_cost: Number(i.unit_cost),
             expiration_date: i.expiration_date || "",
+            iva_tipo: i.iva_tipo || "incluido",
+            iva_porcentaje: Number(i.iva_porcentaje) || 0,
+            utilidad_porcentaje: Number(i.utilidad_porcentaje) || 0,
+            costo_con_iva: Number(i.costo_con_iva) || 0,
+            precio_final: Number(i.precio_final) || 0,
           }))
         );
       } else {
@@ -67,7 +78,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
     if (!empresaId) return;
     const [suppRes, prodRes] = await Promise.all([
       supabase.from("suppliers").select("id, name").eq("empresa_id", empresaId).eq("is_active", true).order("name"),
-      supabase.from("products").select("id, name, cost").eq("empresa_id", empresaId).eq("active", true).order("name"),
+      supabase.from("products").select("id, name, cost, iva_tipo, utilidad_porcentaje").eq("empresa_id", empresaId).eq("active", true).order("name"),
     ]);
     setSuppliers(suppRes.data || []);
     setProducts(prodRes.data || []);
@@ -82,18 +93,37 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
   };
 
   const addItem = () => {
-    setItems([...items, { product_id: "", product_name: "", quantity: 1, unit_cost: 0, expiration_date: "" }]);
+    setItems([...items, { 
+      product_id: "", product_name: "", quantity: 1, unit_cost: 0, expiration_date: "",
+      iva_tipo: "incluido", iva_porcentaje: 0, utilidad_porcentaje: 0, costo_con_iva: 0, precio_final: 0
+    }]);
   };
 
   const updateItem = (index: number, field: keyof OrderItem, value: any) => {
     const updated = [...items];
     if (field === "product_id") {
       const product = products.find((p) => p.id === value);
+      const unit_cost = product?.cost || 0;
+      const iva_tipo = (product as any)?.iva_tipo || "incluido";
+      const utilidad_porcentaje = (product as any)?.utilidad_porcentaje || 0;
+      
+      let iva_porcentaje = 0;
+      if (iva_tipo === "minimo") iva_porcentaje = 10;
+      else if (iva_tipo === "normal") iva_porcentaje = 22;
+      
+      const costo_con_iva = unit_cost * (1 + iva_porcentaje / 100);
+      const precio_final = costo_con_iva * (1 + utilidad_porcentaje / 100);
+
       updated[index] = {
         ...updated[index],
         product_id: value,
         product_name: product?.name || "",
-        unit_cost: product?.cost || 0,
+        unit_cost,
+        iva_tipo,
+        iva_porcentaje,
+        utilidad_porcentaje,
+        costo_con_iva: Number(costo_con_iva.toFixed(2)),
+        precio_final: Number(precio_final.toFixed(2)),
       };
     } else {
       (updated[index] as any)[field] = value;
@@ -106,7 +136,7 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
   };
 
   const total = useMemo(
-    () => items.reduce((sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.unit_cost) || 0), 0),
+    () => items.reduce((sum, i) => sum + (Number(i.quantity) || 0) * ((Number(i.costo_con_iva) > 0 ? Number(i.costo_con_iva) : Number(i.unit_cost)) || 0), 0),
     [items],
   );
 
@@ -149,6 +179,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
         quantity: Number(i.quantity),
         unit_cost: Number(i.unit_cost),
         expiration_date: i.expiration_date || null,
+        iva_tipo: i.iva_tipo,
+        iva_porcentaje: Number(i.iva_porcentaje),
+        utilidad_porcentaje: Number(i.utilidad_porcentaje),
+        costo_con_iva: Number(i.costo_con_iva),
+        precio_final: Number(i.precio_final),
       }));
 
       const { error: itemsError } = await supabase.from("purchase_order_items").insert(orderItems as any);
@@ -248,6 +283,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
               quantity: Number(i.quantity),
               unit_cost: Number(i.unit_cost),
               expiration_date: i.expiration_date || null,
+              iva_tipo: i.iva_tipo,
+              iva_porcentaje: Number(i.iva_porcentaje),
+              utilidad_porcentaje: Number(i.utilidad_porcentaje),
+              costo_con_iva: Number(i.costo_con_iva),
+              precio_final: Number(i.precio_final),
             })) as any
           );
         if (insertItemsError) throw insertItemsError;
@@ -340,6 +380,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
               quantity: Number(i.quantity),
               unit_cost: Number(i.unit_cost),
               expiration_date: i.expiration_date || null,
+              iva_tipo: i.iva_tipo,
+              iva_porcentaje: Number(i.iva_porcentaje),
+              utilidad_porcentaje: Number(i.utilidad_porcentaje),
+              costo_con_iva: Number(i.costo_con_iva),
+              precio_final: Number(i.precio_final),
             })) as any
           );
         if (insertItemsError) throw insertItemsError;
@@ -468,10 +513,24 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
                     min="0"
                     step="0.01"
                     value={item.unit_cost}
-                    onChange={(e) => updateItem(idx, "unit_cost", Number(e.target.value))}
+                    onChange={(e) => {
+                      const newCost = Number(e.target.value);
+                      const iva = item.iva_tipo === "minimo" ? 10 : item.iva_tipo === "normal" ? 22 : 0;
+                      const cIva = newCost * (1 + iva/100);
+                      const pFin = cIva * (1 + item.utilidad_porcentaje/100);
+                      
+                      const updated = [...items];
+                      updated[idx] = {
+                        ...updated[idx],
+                        unit_cost: newCost,
+                        costo_con_iva: Number(cIva.toFixed(2)),
+                        precio_final: Number(pFin.toFixed(2))
+                      };
+                      setItems(updated);
+                    }}
                   />
                 </div>
-                <div className="col-span-4 md:col-span-3">
+                <div className="col-span-4 md:col-span-2">
                   <Label className="text-xs">Vencimiento</Label>
                   <Input
                     type="date"
@@ -479,9 +538,29 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
                     onChange={(e) => updateItem(idx, "expiration_date", e.target.value)}
                   />
                 </div>
-                <div className="col-span-12 md:col-span-1 flex justify-end">
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(idx)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                
+                <div className="col-span-12 my-2">
+                  <ItemPricingSettings
+                    baseCost={item.unit_cost}
+                    ivaTipo={item.iva_tipo}
+                    utilidadPorcentaje={item.utilidad_porcentaje}
+                    onChange={(vals) => {
+                      const updated = [...items];
+                      updated[idx] = {
+                        ...updated[idx],
+                        iva_tipo: vals.ivaTipo,
+                        iva_porcentaje: vals.ivaPorcentaje,
+                        utilidad_porcentaje: vals.utilidadPorcentaje,
+                        costo_con_iva: vals.costoConIva,
+                        precio_final: vals.precioFinal
+                      };
+                      setItems(updated);
+                    }}
+                  />
+                </div>
+                <div className="col-span-12 flex justify-end border-t pt-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
+                    <Trash2 className="h-4 w-4 text-destructive mr-1" /> Quitar de la orden
                   </Button>
                 </div>
               </div>

@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2 } from "lucide-react";
+import { ItemPricingSettings, IvaTipo } from "@/components/shared/ItemPricingSettings";
 import {
   Select,
   SelectContent,
@@ -33,6 +35,18 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Expense, Supplier } from "./ExpensesTab";
 import SupplierDialog from "./SupplierDialog";
+
+interface ExpenseItemForm {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number;
+  iva_tipo: IvaTipo;
+  iva_porcentaje: number;
+  utilidad_porcentaje: number;
+  costo_con_iva: number;
+  precio_final: number;
+}
 
 interface ExpenseDialogProps {
   open: boolean;
@@ -62,6 +76,17 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState("");
 
+  const [products, setProducts] = useState<{ id: string; name: string; cost: number | null, iva_tipo: IvaTipo, utilidad_porcentaje: number }[]>([]);
+  const [items, setItems] = useState<ExpenseItemForm[]>([]);
+
+  useEffect(() => {
+    if (open && empresaId) {
+      supabase.from("products").select("id, name, cost, iva_tipo, utilidad_porcentaje")
+        .eq("empresa_id", empresaId).eq("active", true).order("name")
+        .then(({data}) => setProducts((data as any) || []));
+    }
+  }, [open, empresaId]);
+
   useEffect(() => {
     setLocalSuppliers(suppliers);
   }, [suppliers]);
@@ -77,6 +102,24 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
       setNotes(expense.notes || "");
       setReceiptUrl(expense.receipt_url || "");
       setReceiptPreview(expense.receipt_url || "");
+
+      // Load items if they exist
+      supabase.from("expense_items").select("*").eq("expense_id", expense.id)
+      .then(({data}) => {
+        if(data) {
+          setItems(data.map((i: any) => ({
+            product_id: i.product_id || "",
+            product_name: i.product_name,
+            quantity: Number(i.quantity),
+            unit_cost: Number(i.unit_cost),
+            iva_tipo: (i.iva_tipo || "incluido") as IvaTipo,
+            iva_porcentaje: Number(i.iva_porcentaje) || 0,
+            utilidad_porcentaje: Number(i.utilidad_porcentaje) || 0,
+            costo_con_iva: Number(i.costo_con_iva) || 0,
+            precio_final: Number(i.precio_final) || 0,
+          })));
+        }
+      });
     } else {
       resetForm();
     }
@@ -93,6 +136,62 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
     setReceiptUrl("");
     setReceiptFile(null);
     setReceiptPreview("");
+    setItems([]);
+  };
+
+  const addItem = () => {
+    setItems([...items, { 
+      product_id: "", product_name: "", quantity: 1, unit_cost: 0, 
+      iva_tipo: "incluido", iva_porcentaje: 0, utilidad_porcentaje: 0, costo_con_iva: 0, precio_final: 0
+    }]);
+  };
+
+  const updateItem = (index: number, field: keyof ExpenseItemForm, value: any) => {
+    const updated = [...items];
+    if (field === "product_id") {
+      const product = products.find((p) => p.id === value);
+      const unit_cost = product?.cost || 0;
+      const iva_tipo = product?.iva_tipo || "incluido";
+      const utilidad_porcentaje = product?.utilidad_porcentaje || 0;
+      
+      let iva_porcentaje = 0;
+      if (iva_tipo === "minimo") iva_porcentaje = 10;
+      else if (iva_tipo === "normal") iva_porcentaje = 22;
+      
+      const costo_con_iva = unit_cost * (1 + iva_porcentaje / 100);
+      const precio_final = costo_con_iva * (1 + utilidad_porcentaje / 100);
+
+      updated[index] = {
+        ...updated[index],
+        product_id: value,
+        product_name: product?.name || "",
+        unit_cost,
+        iva_tipo,
+        iva_porcentaje,
+        utilidad_porcentaje,
+        costo_con_iva: Number(costo_con_iva.toFixed(2)),
+        precio_final: Number(precio_final.toFixed(2)),
+      };
+    } else {
+      (updated[index] as any)[field] = value;
+    }
+    setItems(updated);
+    
+    // Auto Update Amount
+    if (field === "quantity" || field === "product_id") {
+      const isComplete = updated.filter(i => i.product_id).length > 0;
+      if (isComplete) {
+        const total = updated.reduce((sum, i) => sum + (Number(i.quantity) || 0) * ((Number(i.costo_con_iva) > 0 ? Number(i.costo_con_iva) : Number(i.unit_cost)) || 0), 0);
+        setAmount(total.toFixed(2));
+      }
+    }
+  };
+
+  const removeItem = (index: number) => {
+    const updated = items.filter((_, i) => i !== index);
+    setItems(updated);
+    const total = updated.reduce((sum, i) => sum + (Number(i.quantity) || 0) * ((Number(i.costo_con_iva) > 0 ? Number(i.costo_con_iva) : Number(i.unit_cost)) || 0), 0);
+    if(updated.length > 0) setAmount(total.toFixed(2));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,12 +313,12 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
       toast.success("Gasto actualizado");
     } else {
       // Create
-      const { error } = await supabase
+      const { data: newExpense, error } = await supabase
         .from("expenses")
         .insert({
           ...expenseData,
           created_by: user?.id,
-        });
+        }).select().single();
 
       if (error) {
         console.error("Error creating expense:", error);
@@ -228,6 +327,16 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
         return;
       }
       toast.success("Gasto registrado");
+
+      const validItems = items.filter((i) => i.product_id && Number(i.quantity) > 0);
+      if(validItems.length > 0) {
+        if(expense) {
+            await supabase.from("expense_items").delete().eq("expense_id", expense.id);
+            await supabase.from("expense_items").insert(validItems.map(i => ({...i, expense_id: expense.id, subtotal: i.costo_con_iva * i.quantity})));
+        } else if (newExpense) {
+            await supabase.from("expense_items").insert(validItems.map(i => ({...i, expense_id: newExpense.id, subtotal: i.costo_con_iva * i.quantity})));
+        }
+      }
 
       // Si es efectivo y pagado, vincular con caja abierta
       if (paymentMethod === "cash" && paymentStatus === "paid" && user?.id) {
@@ -332,6 +441,101 @@ const ExpenseDialog = ({ open, onClose, expense, suppliers }: ExpenseDialogProps
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Productos (Opcional) */}
+          <div className="space-y-4 border rounded-md p-4 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Productos del Gasto (Opcional)</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="h-4 w-4 mr-1" /> Agregar producto
+              </Button>
+            </div>
+
+            {items.map((item, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-end border rounded-md p-3 bg-background">
+                <div className="col-span-12 md:col-span-8">
+                  <Label className="text-xs">Producto</Label>
+                  <Select value={item.product_id} onValueChange={(v) => updateItem(idx, "product_id", v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-6 md:col-span-4">
+                  <Label className="text-xs">Cantidad</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))}
+                  />
+                </div>
+                <div className="col-span-6 md:col-span-4">
+                  <Label className="text-xs">Costo Unit.</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.unit_cost}
+                    onChange={(e) => {
+                      const newCost = Number(e.target.value);
+                      const iva = item.iva_tipo === "minimo" ? 10 : item.iva_tipo === "normal" ? 22 : 0;
+                      const cIva = newCost * (1 + iva/100);
+                      const pFin = cIva * (1 + item.utilidad_porcentaje/100);
+                      
+                      const updated = [...items];
+                      updated[idx] = {
+                        ...updated[idx],
+                        unit_cost: newCost,
+                        costo_con_iva: Number(cIva.toFixed(2)),
+                        precio_final: Number(pFin.toFixed(2))
+                      };
+                      setItems(updated);
+                      // Update amount
+                      const isComplete = updated.filter(i => i.product_id).length > 0;
+                      if (isComplete) {
+                        const total = updated.reduce((sum, i) => sum + (Number(i.quantity) || 0) * ((Number(i.costo_con_iva) > 0 ? Number(i.costo_con_iva) : Number(i.unit_cost)) || 0), 0);
+                        setAmount(total.toFixed(2));
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="col-span-12 my-2">
+                  <ItemPricingSettings
+                    baseCost={item.unit_cost}
+                    ivaTipo={item.iva_tipo}
+                    utilidadPorcentaje={item.utilidad_porcentaje}
+                    onChange={(vals) => {
+                      const updated = [...items];
+                      updated[idx] = {
+                        ...updated[idx],
+                        iva_tipo: vals.ivaTipo,
+                        iva_porcentaje: vals.ivaPorcentaje,
+                        utilidad_porcentaje: vals.utilidadPorcentaje,
+                        costo_con_iva: vals.costoConIva,
+                        precio_final: vals.precioFinal
+                      };
+                      setItems(updated);
+                      // Update amount
+                      const total = updated.reduce((sum, i) => sum + (Number(i.quantity) || 0) * ((Number(i.costo_con_iva) > 0 ? Number(i.costo_con_iva) : Number(i.unit_cost)) || 0), 0);
+                      setAmount(total.toFixed(2));
+                    }}
+                  />
+                </div>
+                <div className="col-span-12 flex justify-end border-t pt-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
+                    <Trash2 className="h-4 w-4 text-destructive mr-1" /> Quitar
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Invoice Number & Date */}

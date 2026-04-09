@@ -865,6 +865,69 @@ export type Database = {
           },
         ]
       }
+      expense_items: {
+        Row: {
+          costo_con_iva: number | null
+          created_at: string | null
+          expense_id: string | null
+          id: string
+          iva_porcentaje: number | null
+          iva_tipo: string | null
+          precio_final: number | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          subtotal: number | null
+          unit_cost: number
+          utilidad_porcentaje: number | null
+        }
+        Insert: {
+          costo_con_iva?: number | null
+          created_at?: string | null
+          expense_id?: string | null
+          id?: string
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          subtotal?: number | null
+          unit_cost?: number
+          utilidad_porcentaje?: number | null
+        }
+        Update: {
+          costo_con_iva?: number | null
+          created_at?: string | null
+          expense_id?: string | null
+          id?: string
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          subtotal?: number | null
+          unit_cost?: number
+          utilidad_porcentaje?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_items_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_counts: {
         Row: {
           counted_at: string | null
@@ -1355,6 +1418,8 @@ export type Database = {
       products: {
         Row: {
           active: boolean | null
+          iva_tipo: string | null
+          utilidad_porcentaje: number | null
           allow_negative_stock: boolean | null
           barcode: string | null
           category: string | null
@@ -1372,6 +1437,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          iva_tipo?: string | null
+          utilidad_porcentaje?: number | null
           allow_negative_stock?: boolean | null
           barcode?: string | null
           category?: string | null
@@ -1389,6 +1456,8 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          iva_tipo?: string | null
+          utilidad_porcentaje?: number | null
           allow_negative_stock?: boolean | null
           barcode?: string | null
           category?: string | null
@@ -1476,7 +1545,12 @@ export type Database = {
       }
       purchase_order_items: {
         Row: {
+          costo_con_iva: number | null
           created_at: string | null
+          iva_porcentaje: number | null
+          iva_tipo: string | null
+          precio_final: number | null
+          utilidad_porcentaje: number | null
           expiration_date: string | null
           id: string
           product_id: string
@@ -1487,7 +1561,12 @@ export type Database = {
           unit_cost: number
         }
         Insert: {
+          costo_con_iva?: number | null
           created_at?: string | null
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          utilidad_porcentaje?: number | null
           expiration_date?: string | null
           id?: string
           product_id: string
@@ -1498,7 +1577,12 @@ export type Database = {
           unit_cost: number
         }
         Update: {
+          costo_con_iva?: number | null
           created_at?: string | null
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          utilidad_porcentaje?: number | null
           expiration_date?: string | null
           id?: string
           product_id?: string
@@ -1708,7 +1792,12 @@ export type Database = {
       }
       sale_items: {
         Row: {
+          costo_con_iva: number | null
           created_at: string | null
+          iva_porcentaje: number | null
+          iva_tipo: string | null
+          precio_final: number | null
+          utilidad_porcentaje: number | null
           empresa_id: string
           id: string
           monto_iva: number | null
@@ -1722,7 +1811,12 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          costo_con_iva?: number | null
           created_at?: string | null
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          utilidad_porcentaje?: number | null
           empresa_id?: string
           id?: string
           monto_iva?: number | null
@@ -1736,7 +1830,12 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          costo_con_iva?: number | null
           created_at?: string | null
+          iva_porcentaje?: number | null
+          iva_tipo?: string | null
+          precio_final?: number | null
+          utilidad_porcentaje?: number | null
           empresa_id?: string
           id?: string
           monto_iva?: number | null

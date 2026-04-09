@@ -2,6 +2,7 @@ import { Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CartItem } from "@/hooks/usePOSTypes";
+import { ItemPricingSettings } from "@/components/shared/ItemPricingSettings";
 
 interface POSCartItemProps {
   item: CartItem;
@@ -11,6 +12,7 @@ interface POSCartItemProps {
   onQuantityCommit: () => void;
   onPriceChange: (newPrice: number) => void;
   onRemove: () => void;
+  onPricingChange?: (values: any) => void;
 }
 
 export function POSCartItem({
@@ -21,6 +23,7 @@ export function POSCartItem({
   onQuantityCommit,
   onPriceChange,
   onRemove,
+  onPricingChange,
 }: POSCartItemProps) {
   return (
     <div className="grid grid-cols-12 gap-4 items-center py-3 border-b hover:bg-secondary/50 transition-colors">
@@ -127,6 +130,17 @@ export function POSCartItem({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {canEditPrice && onPricingChange && !item.product.id.startsWith("generic-") && (
+        <div className="col-span-12 mt-2 pt-2 border-t border-dashed">
+          <ItemPricingSettings
+            baseCost={item.product.cost || 0}
+            ivaTipo={item.iva_tipo}
+            utilidadPorcentaje={item.utilidad_porcentaje}
+            onChange={onPricingChange}
+          />
+        </div>
+      )}
     </div>
   );
 }

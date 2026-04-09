@@ -16,6 +16,7 @@ interface POSCartPanelProps {
   onQuantityChange: (productId: string, value: string) => void;
   onQuantityCommit: (productId: string) => void;
   onPriceChange: (productId: string, newPrice: number) => Promise<void>;
+  onPricingChange?: (productId: string, values: any) => void;
 }
 
 export function POSCartPanel({
@@ -29,6 +30,7 @@ export function POSCartPanel({
   onQuantityChange,
   onQuantityCommit,
   onPriceChange,
+  onPricingChange,
 }: POSCartPanelProps) {
   return (
     <div className="lg:col-span-2 space-y-6">
@@ -82,6 +84,7 @@ export function POSCartPanel({
                 onQuantityChange={(value) => onQuantityChange(item.product.id, value)}
                 onQuantityCommit={() => onQuantityCommit(item.product.id)}
                 onPriceChange={(newPrice) => onPriceChange(item.product.id, newPrice)}
+                onPricingChange={onPricingChange ? (vals) => onPricingChange(item.product.id, vals) : undefined}
                 onRemove={() => removeFromCart(item.product.id)}
               />
             ))}

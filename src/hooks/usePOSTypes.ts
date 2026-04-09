@@ -6,11 +6,19 @@ export interface Product {
   stock: number;
   min_stock: number;
   stock_disabled?: boolean;
+  cost: number;
+  iva_tipo?: "incluido" | "minimo" | "normal";
+  utilidad_porcentaje?: number;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  iva_tipo: "incluido" | "minimo" | "normal";
+  iva_porcentaje: number;
+  utilidad_porcentaje: number;
+  costo_con_iva: number;
+  precio_final: number;
   expirationInfo?: {
     daysUntilExpiration: number;
     nearestExpirationDate: string;

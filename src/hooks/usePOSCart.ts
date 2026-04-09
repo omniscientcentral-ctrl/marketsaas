@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { differenceInDays, parseISO } from "date-fns";
 import { EXPIRATION_THRESHOLDS } from "@/hooks/useProductExpiration";
 import type { Product, CartItem } from "./usePOSTypes";
+import type { PricingValues, IvaTipo } from "@/components/shared/ItemPricingSettings";
 
 export function usePOSCart(
   userId: string | undefined,
@@ -120,7 +121,7 @@ export function usePOSCart(
           added = true;
           return prevCart.map((item) =>
             item.product.id === updatedProduct.id
-              ? { ...item, product: updatedProduct, quantity: newQuantity, expirationInfo }
+              ? { ...item, product: { ...updatedProduct, price: item.product.price }, quantity: newQuantity, expirationInfo }
               : item,
           );
         } else {
@@ -137,7 +138,23 @@ export function usePOSCart(
             toast.info(`${updatedProduct.name} - Stock proyectado: ${stockProyectado}`);
           }
           added = true;
-          return [{ product: updatedProduct, quantity, expirationInfo }, ...prevCart];
+          const iva_tipo_val = updatedProduct.iva_tipo || "incluido";
+          const utilidad_val = updatedProduct.utilidad_porcentaje || 0;
+          let iva_pct = 0;
+          if (iva_tipo_val === "minimo") iva_pct = 10;
+          else if (iva_tipo_val === "normal") iva_pct = 22;
+          const c_iva = (updatedProduct.cost || 0) * (1 + iva_pct / 100);
+          
+          return [{ 
+            product: updatedProduct, 
+            quantity, 
+            expirationInfo,
+            iva_tipo: iva_tipo_val as IvaTipo,
+            iva_porcentaje: iva_pct,
+            utilidad_porcentaje: utilidad_val,
+            costo_con_iva: Number(c_iva.toFixed(2)),
+            precio_final: Number((updatedProduct.price).toFixed(2))
+          }, ...prevCart];
         }
       });
       if (added) {
@@ -197,6 +214,28 @@ export function usePOSCart(
     });
   };
 
+  const updatePricing = (productId: string, vals: PricingValues) => {
+    setCart((prev) => 
+      prev.map(i => {
+        if (i.product.id === productId) {
+          return {
+            ...i,
+            iva_tipo: vals.ivaTipo,
+            iva_porcentaje: vals.ivaPorcentaje,
+            utilidad_porcentaje: vals.utilidadPorcentaje,
+            costo_con_iva: vals.costoConIva,
+            precio_final: vals.precioFinal,
+            product: {
+              ...i.product,
+              price: vals.precioFinal
+            }
+          };
+        }
+        return i;
+      })
+    );
+  };
+
   const updatePrice = async (productId: string, newPrice: number) => {
     if (!canEditPrice) {
       toast.error("No tenés permiso para modificar precios");
@@ -243,8 +282,19 @@ export function usePOSCart(
       stock: 999,
       min_stock: 0,
       stock_disabled: true,
+      cost: data.price,
+      iva_tipo: "incluido",
+      utilidad_porcentaje: 0,
     };
-    setCart((prev) => [{ product: virtualProduct, quantity: data.quantity }, ...prev]);
+    setCart((prev) => [{ 
+      product: virtualProduct, 
+      quantity: data.quantity,
+      iva_tipo: "incluido",
+      iva_porcentaje: 0,
+      utilidad_porcentaje: 0,
+      costo_con_iva: data.price,
+      precio_final: data.price 
+    }, ...prev]);
     toast.success(`${data.name} agregado (genérico)`);
   };
 
@@ -268,6 +318,7 @@ export function usePOSCart(
     handleQuantityInputChange,
     commitQuantityInput,
     updatePrice,
+    updatePricing,
     addGenericProduct,
     clearCart,
     getSubtotal,

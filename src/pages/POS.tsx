@@ -48,6 +48,7 @@ const POS = () => {
     handleQuantityInputChange,
     commitQuantityInput,
     updatePrice,
+    updatePricing,
     addGenericProduct,
     clearCart: clearCartItems,
     getSubtotal,
@@ -529,6 +530,7 @@ const POS = () => {
             onQuantityChange={handleQuantityInputChange}
             onQuantityCommit={commitQuantityInput}
             onPriceChange={updatePrice}
+            onPricingChange={updatePricing}
           />
 
           <POSSummaryPanel
