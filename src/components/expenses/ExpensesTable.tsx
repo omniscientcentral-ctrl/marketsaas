@@ -76,11 +76,14 @@ const ExpensesTable = ({ expenses, loading, onEdit, onDelete }: ExpensesTablePro
       const orderNumber = expense.notes.replace("Orden de compra #", "").trim();
       setDetailLoading(true);
       try {
-        const { data: order } = await supabase
+        const { data: orders } = await supabase
           .from("purchase_orders")
           .select("*, items:purchase_order_items(product_name, quantity, unit_cost, expiration_date)")
           .eq("order_number", Number(orderNumber))
-          .maybeSingle();
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const order = orders?.[0];
 
         setDetailData({
           supplier_name: expense.supplier?.name || "—",
