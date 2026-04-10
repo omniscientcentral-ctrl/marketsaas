@@ -7,6 +7,7 @@ interface ReceptionItem {
   quantity: number;
   unit_cost: number;
   expiration_date: string | null;
+  precio_final?: number;
 }
 
 interface ReceptionParams {
@@ -60,8 +61,16 @@ export const receivePurchaseOrder = async (params: ReceptionParams) => {
   });
   if (expenseError) throw expenseError;
 
-  // 4. Sync product_stock_balance
+  // 4. Update product prices and sync stock balance
   for (const item of items) {
+    if (item.precio_final && Number(item.precio_final) > 0) {
+      await supabase
+        .from("products")
+        .update({ price: Number(item.precio_final) })
+        .eq("id", item.product_id)
+        .eq("empresa_id", empresaId);
+    }
+
     const { data: updatedProduct } = await supabase
       .from("products")
       .select("stock")

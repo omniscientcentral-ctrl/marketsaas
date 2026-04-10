@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Check, PackageCheck, X } from "lucide-react";
+import { Plus, Pencil, Check, PackageCheck, X, DollarSign } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchase_orders")
-        .select("*, supplier:suppliers(name), items:purchase_order_items(id, product_id, product_name, quantity, unit_cost, expiration_date)")
+        .select("*, supplier:suppliers(name), items:purchase_order_items(id, product_id, product_name, quantity, unit_cost, expiration_date, precio_final)")
         .eq("empresa_id", empresaId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -98,6 +98,7 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
           quantity: Number(i.quantity),
           unit_cost: Number(i.unit_cost),
           expiration_date: i.expiration_date || null,
+          precio_final: Number(i.precio_final) || 0,
         })),
         userId: user.id,
       });
@@ -201,12 +202,13 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                       <Badge variant="outline" className={status.className}>{status.label}</Badge>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {isPending && (
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
                             disabled={receptionLoading === order.id}
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleConfirmReception(order);
@@ -216,11 +218,36 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                             {receptionLoading === order.id ? "Recibiendo..." : "Recibir"}
                           </Button>
                         )}
+                        {isReceived && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPayingOrder(order);
+                              setPaymentMethod("transfer");
+                              setPaymentDate(new Date().toISOString().split("T")[0]);
+                              setPaymentDialogOpen(true);
+                            }}
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Pagar
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleEdit(order); }}
+                        >
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
                         {isPending && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                             disabled={cancelLoading === order.id}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -231,25 +258,6 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                             {cancelLoading === order.id ? "Cancelando..." : "Cancelar"}
                           </Button>
                         )}
-                        {isReceived && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPayingOrder(order);
-                              setPaymentMethod("transfer");
-                              setPaymentDate(new Date().toISOString().split("T")[0]);
-                              setPaymentDialogOpen(true);
-                            }}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Pagar
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(order); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

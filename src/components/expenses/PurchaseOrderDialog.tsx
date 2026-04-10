@@ -189,7 +189,20 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
       const { error: itemsError } = await supabase.from("purchase_order_items").insert(orderItems as any);
       if (itemsError) throw itemsError;
 
-      // 3. If received: generate batches + expense + stock sync via shared hook
+      // 3. Update product prices with precio_final
+      await Promise.all(
+        validItems
+          .filter((i) => Number(i.precio_final) > 0)
+          .map((i) =>
+            supabase
+              .from("products")
+              .update({ price: Number(i.precio_final) })
+              .eq("id", i.product_id)
+              .eq("empresa_id", empresaId!)
+          )
+      );
+
+      // 4. If received: generate batches + expense + stock sync via shared hook
       if (orderStatus === "received") {
         await receivePurchaseOrder({
           orderId: order.id,
@@ -292,7 +305,20 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
           );
         if (insertItemsError) throw insertItemsError;
 
-        // 3. Reconcile batches
+        // 3. Update product prices with precio_final
+        await Promise.all(
+          validItems
+            .filter((i) => Number(i.precio_final) > 0)
+            .map((i) =>
+              supabase
+                .from("products")
+                .update({ price: Number(i.precio_final) })
+                .eq("id", i.product_id)
+                .eq("empresa_id", empresaId!)
+            )
+        );
+
+        // 4. Reconcile batches
         const { error: deleteBatchError } = await supabase
           .from("product_batches")
           .delete()
@@ -389,7 +415,20 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
           );
         if (insertItemsError) throw insertItemsError;
 
-        // 3. If transitioning pending → received, generate batches + expense + stock
+        // 3. Update product prices with precio_final
+        await Promise.all(
+          validItems
+            .filter((i) => Number(i.precio_final) > 0)
+            .map((i) =>
+              supabase
+                .from("products")
+                .update({ price: Number(i.precio_final) })
+                .eq("id", i.product_id)
+                .eq("empresa_id", empresaId!)
+            )
+        );
+
+        // 4. If transitioning pending → received, generate batches + expense + stock
         if (nowReceived) {
           await receivePurchaseOrder({
             orderId: editingOrder.id,
