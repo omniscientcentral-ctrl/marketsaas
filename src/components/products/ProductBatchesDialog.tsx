@@ -553,6 +553,11 @@ export function ProductBatchesDialog({
                     type="text"
                     value={batchNumber}
                     onChange={(e) => setBatchNumber(e.target.value)}
+                    onFocus={() => {
+                      if (batchNumber && /^L-\d{8}-\d{3}$/.test(batchNumber)) {
+                        setBatchNumber("");
+                      }
+                    }}
                     placeholder="Ej: L-20260216-001"
                   />
                 </div>
