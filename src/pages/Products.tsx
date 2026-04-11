@@ -655,7 +655,26 @@ const Products = () => {
                       onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                     />
                   </div>
-                  <Button type="submit" className="w-full">
+                  {editingProduct && (
+                    <div className="pt-2 border-t mt-4 flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground mr-4">
+                        Gestionar el inventario de este producto:
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          setSelectedProductForBatches(editingProduct);
+                          setShowBatchesDialog(true);
+                        }}
+                        className="gap-2"
+                      >
+                        <Package className="h-4 w-4" />
+                        Lotes ({batchCounts[editingProduct.id] || 0})
+                      </Button>
+                    </div>
+                  )}
+                  <Button type="submit" className="w-full mt-4">
                     {editingProduct ? "Actualizar" : "Crear"} Producto
                   </Button>
                 </form>
@@ -782,7 +801,6 @@ const Products = () => {
                   <TableHead>Familia</TableHead>
                   <TableHead>Precio</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Lotes</TableHead>
                   <TableHead>Stock Neg.</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -813,20 +831,6 @@ const Products = () => {
                       <Badge variant={product.stock_disabled ? "secondary" : product.stock < 10 ? "destructive" : "secondary"}>
                         {product.stock_disabled ? 0 : product.stock}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedProductForBatches(product);
-                          setShowBatchesDialog(true);
-                        }}
-                        className="h-8 px-2 gap-1"
-                      >
-                        <Package className="h-3 w-3" />
-                        <span className="text-xs">{batchCounts[product.id] || 0}</span>
-                      </Button>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
