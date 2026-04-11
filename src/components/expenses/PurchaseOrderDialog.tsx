@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { receivePurchaseOrder } from "@/hooks/usePurchaseOrderReception";
 import { ItemPricingSettings, IvaTipo } from "@/components/shared/ItemPricingSettings";
 
@@ -31,6 +34,49 @@ interface Props {
   empresaId: string | null;
   editingOrder?: any;
 }
+
+const ProductCombobox = ({ value, onSelect, products }: { value: string, onSelect: (v: string) => void, products: any[] }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className={cn("w-full justify-between font-normal px-3", !value && "text-muted-foreground")}
+        >
+          <span className="truncate flex-1 text-left">
+            {value ? products.find((p) => p.id === value)?.name : "Seleccionar"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] md:w-[400px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Buscar por nombre..." />
+          <CommandList>
+            <CommandEmpty>No se encontraron productos.</CommandEmpty>
+            <CommandGroup className="max-h-[250px] overflow-auto">
+              {products.map((p) => (
+                <CommandItem
+                  key={p.id}
+                  value={p.name}
+                  onSelect={() => {
+                    onSelect(p.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4 shrink-0", p.id === value ? "opacity-100" : "opacity-0")} />
+                  {p.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) => {
   const { user } = useAuth();
@@ -523,18 +569,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
               <div key={idx} className="grid grid-cols-12 gap-2 items-end border rounded-md p-3">
                 <div className="col-span-12 md:col-span-4">
                   <Label className="text-xs">Producto</Label>
-                  <Select value={item.product_id} onValueChange={(v) => updateItem(idx, "product_id", v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ProductCombobox 
+                    value={item.product_id}
+                    onSelect={(v) => updateItem(idx, "product_id", v)}
+                    products={products}
+                  />
                 </div>
                 <div className="col-span-4 md:col-span-2">
                   <Label className="text-xs">Cantidad</Label>
