@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit, Trash2, Package, Search, MinusCircle, CheckCircle2, Barcode, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Package, Search, MinusCircle, CheckCircle2, Barcode, ChevronLeft, ChevronRight, Tags } from "lucide-react";
 import { BarcodeDialog } from "@/components/products/BarcodeDialog";
 import { ProductBatchesDialog } from "@/components/products/ProductBatchesDialog";
 import { Switch } from "@/components/ui/switch";
@@ -511,7 +511,15 @@ const Products = () => {
                 <h1 className="text-lg md:text-2xl font-bold">Productos</h1>
               </div>
               <div className="flex gap-2">
-                <Button 
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/products/families")}
+                >
+                  <Tags className="h-4 w-4 mr-1" />
+                  Familias
+                </Button>
+                <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setShowDisableStockConfirm(true)}
