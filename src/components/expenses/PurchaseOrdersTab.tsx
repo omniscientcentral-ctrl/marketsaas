@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Check, PackageCheck, X, DollarSign } from "lucide-react";
+import { Plus, Pencil, Check, PackageCheck, X, DollarSign, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ interface PurchaseOrdersTabProps {
 
 const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
   const empresaId = useEmpresaId();
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cameFromPOS = searchParams.get("from") === "pos";
@@ -157,6 +157,72 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
     }
   };
 
+  const handleDeleteOrder = async (order: any) => {
+    if (!confirm(`¿Estás seguro de ELIMINAR la orden #${order.order_number}?\nEsta acción borrará la orden, los lotes y gastos vinculados. No se puede deshacer.`)) return;
+    
+    if (!empresaId) return;
+    setCancelLoading(order.id);
+    try {
+      const isReceived = order.status === "received";
+      const batchTag = `OC-${order.order_number}`;
+      const expenseTag = `Orden de compra #${order.order_number}`;
+
+      let affectedProductIds: string[] = [];
+
+      if (isReceived) {
+        // Verificar que no se hayan consumido lotes
+        const { data: existingBatches } = await supabase
+          .from("product_batches")
+          .select("id, quantity, initial_quantity, product_id")
+          .eq("batch_number", batchTag)
+          .eq("empresa_id", empresaId);
+
+        if (existingBatches?.some((b) => Number(b.quantity) < Number(b.initial_quantity))) {
+          toast.error("No se puede eliminar: esta orden tiene lotes con stock ya consumido (ventas). Debes cancelarla o ajustar el stock manualmente.");
+          setCancelLoading(null);
+          return;
+        }
+
+        affectedProductIds = (existingBatches || []).map((b) => b.product_id);
+
+        // Borrar lotes
+        await supabase.from("product_batches").delete().eq("batch_number", batchTag).eq("empresa_id", empresaId);
+
+        // Borrar gasto
+        await supabase.from("expenses").delete().eq("notes", expenseTag).eq("empresa_id", empresaId);
+      }
+
+      // Borrar items (por si no hay cascade)
+      await supabase.from("purchase_order_items").delete().eq("purchase_order_id", order.id);
+
+      // Borrar orden
+      const { error: delError } = await supabase.from("purchase_orders").delete().eq("id", order.id).eq("empresa_id", empresaId);
+      if (delError) throw delError;
+
+      // Sincronizar balances de stock
+      if (isReceived && affectedProductIds.length > 0) {
+        for (const productId of affectedProductIds) {
+          const { data: updatedProduct } = await supabase.from("products").select("stock").eq("id", productId).single();
+          if (updatedProduct) {
+            await supabase.from("product_stock_balance").upsert({
+              product_id: productId,
+              current_balance: updatedProduct.stock,
+              last_movement_at: new Date().toISOString(),
+              empresa_id: empresaId,
+            }, { onConflict: "product_id" });
+          }
+        }
+      }
+
+      toast.success(`Orden #${order.order_number} eliminada por completo`);
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders", empresaId] });
+    } catch (error: any) {
+      toast.error("Error al eliminar la orden: " + error.message);
+    } finally {
+      setCancelLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -256,6 +322,20 @@ const PurchaseOrdersTab = ({ autoOpenNew = false }: PurchaseOrdersTabProps) => {
                           >
                             <X className="h-4 w-4 mr-1" />
                             {cancelLoading === order.id ? "Cancelando..." : "Cancelar"}
+                          </Button>
+                        )}
+                        {activeRole === "admin" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={cancelLoading === order.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteOrder(order);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
                           </Button>
                         )}
                       </div>
