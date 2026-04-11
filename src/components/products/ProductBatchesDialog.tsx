@@ -178,6 +178,7 @@ export function ProductBatchesDialog({
         supplier_id: supplierId || null,
         status: "active",
         created_by: user?.id,
+        empresa_id: empresaId,
       });
 
       if (batchError) throw batchError;
@@ -205,6 +206,7 @@ export function ProductBatchesDialog({
         new_stock: currentStock,
         performed_by: user?.id,
         notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""}${expirationDate ? ` - Vence: ${expirationDate}` : ""}`,
+        empresa_id: empresaId,
       });
 
       // Sincronizar product_stock_balance con el nuevo stock
@@ -222,6 +224,7 @@ export function ProductBatchesDialog({
               product_id: productId,
               current_balance: updatedProduct.stock,
               last_movement_at: new Date().toISOString(),
+              empresa_id: empresaId,
             },
             { onConflict: "product_id" }
           );
@@ -299,6 +302,7 @@ export function ProductBatchesDialog({
           new_stock: currentStock,
           performed_by: user?.id,
           notes: `Edición de lote${batchNumber ? ` #${batchNumber}` : ""} - Ajuste de cantidad: ${editingBatch.quantity} → ${newQuantity}`,
+          empresa_id: empresaId,
         });
       }
 
@@ -317,6 +321,7 @@ export function ProductBatchesDialog({
               product_id: productId,
               current_balance: updatedProduct.stock,
               last_movement_at: new Date().toISOString(),
+              empresa_id: empresaId,
             },
             { onConflict: "product_id" }
           );
@@ -375,6 +380,7 @@ export function ProductBatchesDialog({
         performed_by: user?.id,
         notes: `Baja por vencimiento - Lote ${batchToDispose.batch_number || batchToDispose.id.slice(0, 8)} - Venció: ${batchToDispose.expiration_date}`,
         reason: "expired",
+        empresa_id: empresaId,
       });
 
       // Sincronizar product_stock_balance con el nuevo stock
@@ -392,6 +398,7 @@ export function ProductBatchesDialog({
               product_id: productId,
               current_balance: updatedProduct.stock,
               last_movement_at: new Date().toISOString(),
+              empresa_id: empresaId,
             },
             { onConflict: "product_id" }
           );

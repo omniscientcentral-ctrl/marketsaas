@@ -371,6 +371,7 @@ const Products = () => {
                   product_id: editingProduct.id,
                   current_balance: newStock,
                   last_movement_at: new Date().toISOString(),
+                  empresa_id: empresaId,
                 },
                 { onConflict: "product_id" }
               );
