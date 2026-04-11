@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit, Trash2, Package, Search, MinusCircle, CheckCircle2, Barcode, ChevronLeft, ChevronRight, Tags } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Package, Search, MinusCircle, CheckCircle2, Barcode, ChevronLeft, ChevronRight, Tags, RefreshCw } from "lucide-react";
 import { BarcodeDialog } from "@/components/products/BarcodeDialog";
 import { ProductBatchesDialog } from "@/components/products/ProductBatchesDialog";
 import { Switch } from "@/components/ui/switch";
@@ -65,6 +65,73 @@ const Products = () => {
     barcode: "",
     family_id: "",
   });
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncAllStocks = async () => {
+    if (!empresaId) return;
+    if (!confirm("Esto recalculará el stock de TODOS los productos basándose en sus lotes activos. ¿Deseas continuar?")) return;
+    
+    setIsSyncing(true);
+    let successCount = 0;
+    try {
+      const { data: allProducts, error: prodErr } = await supabase
+        .from('products')
+        .select('id')
+        .eq('empresa_id', empresaId);
+      if (prodErr) throw prodErr;
+
+      const { data: allBatches, error: batchErr } = await supabase
+        .from('product_batches')
+        .select('product_id, quantity')
+        .eq('status', 'active')
+        .eq('empresa_id', empresaId);
+      if (batchErr) throw batchErr;
+
+      const stockMap: Record<string, number> = {};
+      allProducts?.forEach(p => stockMap[p.id] = 0);
+      allBatches?.forEach(b => {
+        if (typeof stockMap[b.product_id] !== 'undefined') {
+          stockMap[b.product_id] += Number(b.quantity);
+        }
+      });
+
+      const updatePromises = [];
+      const balanceUpserts = [];
+      
+      for (const productId of Object.keys(stockMap)) {
+        const correctStock = stockMap[productId];
+        updatePromises.push(
+          supabase.from("products").update({ stock: correctStock }).eq("id", productId)
+        );
+        balanceUpserts.push({
+          product_id: productId,
+          current_balance: correctStock,
+          last_movement_at: new Date().toISOString(),
+          empresa_id: empresaId
+        });
+        successCount++;
+      }
+
+      for (let i = 0; i < updatePromises.length; i += 50) {
+        await Promise.all(updatePromises.slice(i, i + 50));
+      }
+
+      for (let i = 0; i < balanceUpserts.length; i += 100) {
+        await supabase.from("product_stock_balance").upsert(
+          balanceUpserts.slice(i, i + 100),
+          { onConflict: "product_id" }
+        );
+      }
+
+      toast.success(`Se sincronizó el stock de ${successCount} productos exitosamente`);
+      fetchProducts(currentPage);
+    } catch (error: any) {
+      toast.error("Error al sincronizar stock: " + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -558,6 +625,13 @@ const Products = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                
+                {activeRole === 'admin' && (
+                  <Button size="sm" variant="outline" className="h-9 md:h-10 border-primary text-primary hover:bg-primary/10" onClick={handleSyncAllStocks} disabled={isSyncing}>
+                    <RefreshCw className={`mr-0 md:mr-2 h-4 w-4 md:h-5 md:w-5 ${isSyncing ? "animate-spin" : ""}`} />
+                    <span className="hidden md:inline">{isSyncing ? "Sincronizando..." : "Sincronizar Stock"}</span>
+                  </Button>
+                )}
                 {!canAddProduct && (
                   <p className="text-xs text-destructive">
                     Límite: {counts.productos}/{limits.max_productos} productos
