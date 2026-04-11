@@ -151,6 +151,29 @@ export function ProductBatchesDialog({
     }
   };
 
+  const syncProductStock = async () => {
+    if (!empresaId) return 0;
+    const { data: activeBatches } = await supabase
+      .from("product_batches")
+      .select("quantity")
+      .eq("product_id", productId)
+      .eq("status", "active")
+      .eq("empresa_id", empresaId);
+
+    const newTotalStock = activeBatches?.reduce((sum, b) => sum + Number(b.quantity), 0) || 0;
+
+    await supabase.from("product_stock_balance").upsert({
+      product_id: productId,
+      current_balance: newTotalStock,
+      last_movement_at: new Date().toISOString(),
+      empresa_id: empresaId
+    }, { onConflict: "product_id" });
+
+    await supabase.from("products").update({ stock: newTotalStock }).eq("id", productId);
+    
+    return newTotalStock;
+  };
+
   const handleAddBatch = async () => {
     if (!quantity) {
       toast({
@@ -183,52 +206,23 @@ export function ProductBatchesDialog({
 
       if (batchError) throw batchError;
 
-      // Activar stock si estaba desactivado
-      await supabase
-        .from("products")
-        .update({ stock_disabled: false })
-        .eq("id", productId);
+      const { data: productData } = await supabase.from("products").select("stock").eq("id", productId).single();
+      const previousStock = productData?.stock || 0;
 
-      // Registrar movimiento de stock (historial)
-      const { data: productData } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", productId)
-        .single();
+      const newStock = await syncProductStock();
 
-      const currentStock = Math.max(0, productData?.stock || 0);
+      await supabase.from("products").update({ stock_disabled: false }).eq("id", productId);
 
       await supabase.from("stock_movements").insert({
         product_id: productId,
         movement_type: "purchase",
         quantity: quantityValue,
-        previous_stock: Math.max(0, currentStock - quantityValue),
-        new_stock: currentStock,
+        previous_stock: previousStock,
+        new_stock: newStock,
         performed_by: user?.id,
         notes: `Recepcion de lote${batchNumber ? ` #${batchNumber}` : ""}${expirationDate ? ` - Vence: ${expirationDate}` : ""}`,
         empresa_id: empresaId,
       });
-
-      // Sincronizar product_stock_balance con el nuevo stock
-      const { data: updatedProduct } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", productId)
-        .single();
-
-      if (updatedProduct) {
-        await supabase
-          .from("product_stock_balance")
-          .upsert(
-            {
-              product_id: productId,
-              current_balance: updatedProduct.stock,
-              last_movement_at: new Date().toISOString(),
-              empresa_id: empresaId,
-            },
-            { onConflict: "product_id" }
-          );
-      }
 
       toast({
         title: "Lote agregado",
@@ -284,47 +278,24 @@ export function ProductBatchesDialog({
 
       if (batchError) throw batchError;
 
-      // Si cambió la cantidad, registrar movimiento (el trigger actualiza stock)
       if (qtyDiff !== 0) {
-        const { data: productData } = await supabase
-          .from("products")
-          .select("stock")
-          .eq("id", productId)
-          .single();
+        const { data: productData } = await supabase.from("products").select("stock").eq("id", productId).single();
+        const previousStock = productData?.stock || 0;
 
-        const currentStock = Math.max(0, productData?.stock || 0);
+        const newStock = await syncProductStock();
 
         await supabase.from("stock_movements").insert({
           product_id: productId,
           movement_type: "adjustment",
           quantity: Math.abs(qtyDiff),
-          previous_stock: Math.max(0, currentStock - qtyDiff),
-          new_stock: currentStock,
+          previous_stock: previousStock,
+          new_stock: newStock,
           performed_by: user?.id,
           notes: `Edición de lote${batchNumber ? ` #${batchNumber}` : ""} - Ajuste de cantidad: ${editingBatch.quantity} → ${newQuantity}`,
           empresa_id: empresaId,
         });
-      }
-
-      // Sincronizar product_stock_balance con el nuevo stock
-      const { data: updatedProduct } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", productId)
-        .single();
-
-      if (updatedProduct) {
-        await supabase
-          .from("product_stock_balance")
-          .upsert(
-            {
-              product_id: productId,
-              current_balance: updatedProduct.stock,
-              last_movement_at: new Date().toISOString(),
-              empresa_id: empresaId,
-            },
-            { onConflict: "product_id" }
-          );
+      } else {
+        await syncProductStock();
       }
 
       toast({
@@ -362,47 +333,22 @@ export function ProductBatchesDialog({
 
       if (batchError) throw batchError;
 
-      // El trigger recalcula stock. Registrar movimiento para historial.
-      const { data: productData } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", productId)
-        .single();
+      const { data: productData } = await supabase.from("products").select("stock").eq("id", productId).single();
+      const previousStock = productData?.stock || 0;
 
-      const currentStock = Math.max(0, productData?.stock || 0);
+      const newStock = await syncProductStock();
 
       await supabase.from("stock_movements").insert({
         product_id: productId,
         movement_type: "loss",
         quantity: batchToDispose.quantity,
-        previous_stock: Math.max(0, currentStock + batchToDispose.quantity),
-        new_stock: currentStock,
+        previous_stock: previousStock,
+        new_stock: newStock,
         performed_by: user?.id,
         notes: `Baja por vencimiento - Lote ${batchToDispose.batch_number || batchToDispose.id.slice(0, 8)} - Venció: ${batchToDispose.expiration_date}`,
         reason: "expired",
         empresa_id: empresaId,
       });
-
-      // Sincronizar product_stock_balance con el nuevo stock
-      const { data: updatedProduct } = await supabase
-        .from("products")
-        .select("stock")
-        .eq("id", productId)
-        .single();
-
-      if (updatedProduct) {
-        await supabase
-          .from("product_stock_balance")
-          .upsert(
-            {
-              product_id: productId,
-              current_balance: updatedProduct.stock,
-              last_movement_at: new Date().toISOString(),
-              empresa_id: empresaId,
-            },
-            { onConflict: "product_id" }
-          );
-      }
 
       toast({
         title: "Lote dado de baja",
