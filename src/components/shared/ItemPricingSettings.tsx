@@ -2,7 +2,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export type IvaTipo = "incluido" | "minimo" | "normal";
+export type IvaTipo = "incluido" | "exento" | "minimo" | "normal";
 
 export interface PricingValues {
   ivaTipo: IvaTipo;
@@ -64,7 +64,8 @@ export function ItemPricingSettings({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="incluido" className="text-xs">Libre/Incl. (0%)</SelectItem>
+            <SelectItem value="incluido" className="text-xs">Incluido (0%)</SelectItem>
+            <SelectItem value="exento" className="text-xs">Exento (0%)</SelectItem>
             <SelectItem value="minimo" className="text-xs">Mínimo (10%)</SelectItem>
             <SelectItem value="normal" className="text-xs">Normal (22%)</SelectItem>
           </SelectContent>
