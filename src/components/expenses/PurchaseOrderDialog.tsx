@@ -510,7 +510,11 @@ const PurchaseOrderDialog = ({ open, onClose, empresaId, editingOrder }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Orden de Compra" : "Nueva Orden de Compra"}</DialogTitle>
         </DialogHeader>
