@@ -106,9 +106,11 @@ export const useProductFamilies = (empresaId?: string | null): UseProductFamilie
 
   const deleteFamily = useCallback(
     async (id: string): Promise<boolean> => {
+      // Instead of hard deleting, we do a soft delete to avoid foreign key constraint errors 
+      // if there are products attached to this family.
       const { error } = await supabase
         .from("product_families")
-        .delete()
+        .update({ active: false })
         .eq("id", id);
 
       if (error) {
